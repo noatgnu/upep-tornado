@@ -1,0 +1,64 @@
+{% extends "layout.html"%}
+{% block title %}{{title}}{% end %}
+{% block content %}
+<br>
+<br>
+{%if unid%}
+    <b>Job ID: {{unid}}</b><br>
+{%if ini_flag == 1%}
+    <p>{{page_er}}</p>
+    {% end %}
+{%if ini_flag == 2%}
+    <b>Query: {{prn}} {{seqq}}</b>
+    {% end %}
+{%if ini_flag == 3%}
+    <b>QUERY: User Entered</b>
+    {% end %}
+{%if hm_flag == 0%}
+      {%if bm_flag == 1%}
+        <br>
+        <p>{{page_er}}</p>
+        {% end %}
+      {%if bm_flag == 2%}
+        <br><b> 1 hit found in raw output.</b><br><br>
+        {% end %}
+      {%elif bm_flag == 3%}
+        <br><b> {{mnumber}} hits found in raw output.</b><br><br>
+        {% end %}          
+      {%if trv_flag == 1%}
+        <b> {{trivial_row}} hit(s) with the same transcript as query sequence </b><br><br>
+        {% end %}
+      {%if webresult == 0%}
+        <br>
+        <p>{{page_er}}</p>
+        {% end %}
+      {%if not webresult == 0%}
+        <br><b>{{ms}}</b><br>
+        {%for row in webresult%}
+            <b><u>HIT/REFERENCE:</u> {{row[2]}} ({{row[10]}})</b><br>
+            
+            <PRE>{{'%s   %s, [%i, %i]\n%s\n%s   %s, [%i, %i]' % (
+                            row[3], seqq, row[6], row[7], row[8], row[9], row[10],
+                            row[11], row[12])}}</PRE>
+            {%if upepk_flag == 1%}
+                {%if row[10] in upepkaks_dict%}
+                    <span style="font-size:80%"><b> {{upepkaks_dict[row[10]]}} </b></span><br>
+                    {% end %}
+                {% end %}
+            {%if cdsk_flag == 1%}
+                {%if row[10] in upepcds_dict%}
+                    <span style="font-size:80%"><b> {{upepcds_dict[row[10]]}} </b></span><br>
+                    {% end %}
+                {% end %}
+            The unformatted aligned sequence can be viewed <a href=/upep/result/data/{{unid+row[10]}}aligned>here.</a><br>
+            <br><span style="font-size:80%"><b>Heatmap representation of {{seqq}} :</b></span><br>
+            <br><img src=/upep/result/data/{{unid+row[10]+'w'+str(win_r)+'.png'}}><br><br>
+            {% if rhm == 1 %}
+                <br><span style="font-size:80%"><b>Heatmap representation of {{row[10]}}:</b></span><br>
+                <br><img src=/upep/result/data/{{unid+row[10]+'w'+str(win_r)+'r.png'}}><br><br>
+                {% end %}
+            {% end %}
+        {% end %}
+    {% end %}
+
+

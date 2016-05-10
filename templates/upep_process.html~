@@ -1,0 +1,43 @@
+{% extends "layout.html"%}
+{% block content %}
+<script>
+
+$(document).ready(function() {
+    console.log("ready");        
+var ws = new WebSocket("ws://10.12.98.41:9999/websocket");
+
+ws.onopen = function () {
+    console.log({% raw parameters%});
+    ws.send(JSON.stringify({% raw parameters%}));
+    document.getElementById('status').innerHTML = "<p>Status: Not finished.</p>";
+    document.title = "Job Started {{unid}}";
+};
+
+ws.onmessage = function (e) {
+    var s = document.createTextNode(e.data);
+    console.log(s)
+    var lb = document.createElement("br");
+    document.getElementById('results').appendChild(s)
+    document.getElementById('results').appendChild(lb)
+    if (e.data == 'Complete.') {
+        window.location = "/upep/result/{{unid}}/{{filter_org}}/{{strict}}/"
+        };
+    if (e.data == 'Unable to find accession ID in database.') {
+        document.getElementById('status').innerHTML = "<p>Status: Failed.</p>";
+        document.title = "Job Failed {{unid}}";
+        };
+    };
+});
+</script>
+<div class="jumbotron">
+    <p>uPEP Query</p>
+    <p>Job: {{unid}}</p>
+    <div id="status">
+    </div>
+    <div id="results">
+    </div>
+    <div id="progress">
+    <img src={{static_url("images/loader.gif")}} alt="loading..." />
+    </div>
+</div>
+{% end %}

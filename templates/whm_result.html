@@ -1,0 +1,18 @@
+{% extends "layout.html"%}
+{% block title %}{{title}}{% end %}
+{% block content %}
+<br>
+<br>
+<b>Query: {{results['query']}}</b><br>
+<b>Reference: {{results['reference']}}</b><br>
+{%if 'error' in results%}
+    <i>{{results['error']}}</i>
+    {%end%}
+{%if not 'error' in results%}
+    The unformatted aligned sequence can be viewed <a href=/upep/result/data/{{results['unid']+'_'}}aligned>here.</a><br>
+    <br><span style="font-size:80%"><b>Heatmap representation:</b></span><br>
+    <br><img src=/upep/result/data/{{results['windowpng']}}><br><br>
+    {%end%}    
+{% end %}
+
+

@@ -1,0 +1,36 @@
+{% extends "layout.html"%}
+{% block content %}
+<script>
+
+$(document).ready(function() {
+    console.log("ready");        
+var ws = new WebSocket("ws://localhost:9999/websocket");
+
+ws.onopen = function () {
+    console.log({% raw parameters%});
+    ws.send(JSON.stringify({% raw parameters%}));
+    document.getElementById('status').innerHTML = "<p><h4>Status: Not finished.</h4></p>";
+    document.title = "Job Started";
+};
+
+ws.onmessage = function (e) {
+    var s = document.createTextNode(e.data);
+    console.log(s)
+    var lb = document.createElement("br");
+    document.getElementById('results').appendChild(s)
+    document.getElementById('results').appendChild(lb)
+    };
+});
+</script>
+<div class="jumbotron">
+    <p><h3>uPEP Query</h3></p>
+    <p><h4>Job:</h4></p>
+    <div id="status">
+    </div>
+    <div id="results">
+    </div>
+    <div id="progress">
+    <img src={{static_url("images/loader.gif")}} alt="loading..." />
+    </div>
+</div>
+{% end %}

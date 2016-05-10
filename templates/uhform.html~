@@ -1,0 +1,30 @@
+﻿{% extends "layout.html"%}
+
+{% block title %}{{title}}{% end %}
+{% block content %}
+﻿<form target="_blank" method="post" action="/upephelper/process">
+
+    <div class="caption"><p>Choose database:</p></div>
+    <select style="width:300px; border:single" name="database">
+	    <optgroup label="Databases:">
+            {% for database in databases%}
+		        <option>{{database}}</option>
+            {% end %}
+		</optgroup>				
+    </select>
+
+{% if codons%}
+    {% for codon in codons %}    
+        <br />
+        {{ codon }}:
+        <input type="checkbox"  name={{ codon }} checked="checked" value="ON">
+    {% end %}
+{% end %}
+<br />
+<div>
+Override:
+<input type="checkbox"  name="override" checked="checked" value="ON">
+</div>
+<input type="submit" value="Submit">
+</form>
+{% end %}

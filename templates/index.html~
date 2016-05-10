@@ -1,0 +1,23 @@
+﻿{% extends "layout.html"%}
+
+{% block title %}{{title}}{% end %}
+
+{% block content %}
+    <div class="row">
+        <div class="col-md-4">
+            <h2>uPEPperoni</h2>
+            <p class="lead">
+                 uPEPperoni was designed to assist in the location and identification of upstream open reading frames (uORFs) that have the potential to encode bioactive peptides (uPEPs). In order to facilitate quick identification of conserved uORFs, it generates "heatmaps" that allow for visual comparison of pairs of sequences for regions of localised sequence similarity.
+            </p>
+            <p><a href="/upep" class="btn btn-default">Go to &raquo;</a></p>
+        </div>
+        <div class="col-md-4">
+            <h2>uPEPDB Builder</h2>
+            <p class="lead">
+                
+            </p>
+            <p><a href="/upephelper" class="btn btn-default">Go to &raquo;</a></p>
+        </div>
+        
+    </div>
+{% end %}

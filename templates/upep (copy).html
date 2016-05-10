@@ -1,0 +1,424 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>
+uPEPperoni - An Online Tool for uPEP Location and Analysis
+</title>
+
+<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+<meta name="description" content="uPEPeroni - An Online Tool for uPEP Location and Analysis">
+<meta name="keywords" content="uPEPs, uPEP, uORF, uPEPeroni">
+
+<script type="text/javascript" src={{static_url("media/jquery-1.2.2.pack.js")}}></script>
+
+
+<script language="javascript">
+<!-- flooble Expandable Content header start
+// Expandable content script from flooble.com.
+// For more information please visit:
+//   http://www.flooble.com/scripts/expand.php
+// Copyright 2002 Animus Pactum Consulting Inc.
+//---------------------------------------------->
+               var ie4 = false;
+               if(document.all) {
+                     ie4 = true;
+               }
+               function getObject(id) {
+                     if (ie4) {
+                             return document.all[id];
+                     } else {
+                             return document.getElementById(id);
+                     }
+               }
+                     
+               function toggle(link, divId) {
+                      var lText = link.innerHTML;
+                      var d = getObject(divId);                  
+                      if (lText.match(/\+/)) {
+                              link.innerHTML = lText.replace('+','-');
+                              d.style.display = 'block';
+                      } else {
+                              link.innerHTML = lText.replace('-','+');
+                              d.style.display = 'none';
+                      }
+               }
+</script>
+
+
+
+
+<link rel="stylesheet" href={{static_url("media/glossymenub.css")}}>
+<script type="text/javascript" src={{static_url("media/tabcontent.js")}}>
+
+/***********************************************
+* Tab Content script v2.2- © Dynamic Drive DHTML code library (www.dynamicdrive.com)
+* This notice MUST stay intact for legal use
+* Visit Dynamic Drive at http://www.dynamicdrive.com/ for full source code
+***********************************************/
+
+</script>
+
+<link rel="stylesheet" href={{static_url("media/main.css")}}>
+<script type="text/javascript" src={{static_url("media/verify.js")}}>
+</script>
+
+</head>
+
+<body>
+
+<script type="text/javascript">
+
+</script> 
+
+<div id="top"></div>
+
+<div id="container">
+
+  <div align="center" style="height:125px; padding-top:8px">
+  <img src={{static_url("media/uPEPlogoblacksmallfilled2a.png")}}>
+  </div>
+  <div>
+    <ul id="querytype" class="glossymenu">
+      <li class="leftimg">&nbsp;</li>
+      <li class="selected"><a href="#" rel="consUpepdiv" onfocus="if(this.blur)this.blur()"><b>Conserved uPEP Search</b></a></li>
+	   <li><a href="#" rel="heatmapdiv" onfocus="if(this.blur)this.blur()"><b>Heatmap Alignment </b></a></li>
+		<li><a href="#" rel="helpdiv" onfocus="if(this.blur)this.blur()"><b>Help</b></a></li>	   
+	   <li class="rightimg">&nbsp;</li>
+    </ul>
+  </div>
+  
+  
+  <div id="maincontainer">
+
+    <div class="contentframe">
+        
+      <div id="consUpepdiv">
+		<form method="POST" onsubmit="return validate_conservedupepform(this)" onreset="return confirm('This will reset this page. Continue?')" action="cgi-bin/conservedupep.cgi">
+
+		<div class="caption">Enter your query nucleotide sequence or previous Job ID:</div>
+		<textarea name="seqquery" class="seq" rows="5" cols="60" ></textarea><br><br>
+		<div class="caption">Choose RefSeq database to search:</div>
+		<select style="width:300px; border:single" name="database">
+		    <optgroup label="Refseq Databases:">
+		        <option>Complete</option>
+		    	<option>Mammals</option>
+		    	<option>Non-mammalian vertebrates</option>
+		    	<option>Invertebrates</option>
+		    	<option>Plants</option>
+		    	<option>Fungi</option>                
+		    </optgroup>
+		</select>
+		<div class="caption">Choose RefSeq database version:</div>
+		<select style="width:160px; border:single" name="database_version">
+		    <optgroup label="Refseq Database Versions:">
+		   	    <option>74</option>
+		    </optgroup>
+		</select>
+	    <div class="caption">Choose starting codons:</div>
+		<select style="width:160px; border:single" name="codon">
+		    <optgroup label="Codons:">
+		        <option>AUG</option>
+		    	<option>AUA</option>
+		    	<option>AUC</option>
+		    	<option>ACG</option>
+		    	<option>AUU</option>
+		    	<option>AAG</option>
+		    	<option>AGG</option>
+		    	<option>CUG</option>
+		    	<option>UUG</option>
+		    	<option>GUG</option>
+		    </optgroup>				
+		</select>
+		<div class="caption">Filter for: (can be used to filter previous job)</div>
+		<select style="width:160px; border:single" name="filter">
+		    <optgroup label="Codons:">
+		        <option>None</option>
+		    	<option>Homo sapiens</option>
+		    	<option>Mus musculus</option>
+		    </optgroup>				
+		</select>
+		<br><br>
+		<a class="caption" href="javascript: void(0);" onclick="toggle(this, 'uSettings');" onfocus="if(this.blur)this.blur()">
+		<span onmouseover="this.style.color='#045C97';" onmouseout="this.style.color='black';"><span class="indicator">-</span> Settings</span></a><br>
+		<div id="uSettings" style="margin-left:20px"><br>
+			<a class="caption" href="javascript: void(0);" onclick="toggle(this, 'uGeneral');" onfocus="if(this.blur)this.blur()">
+			<span onmouseover="this.style.color='#045C97';" onmouseout="this.style.color='black';">
+			<span class="indicator">-</span> General</span></a><br>
+			<div id="uGeneral"><br>
+				<table border="0" width="200">
+					<tr><td width="200"><span class=caption>Estimate Ka/Ks ratio:</span></td>
+					<td>
+            <input onclick="toggle_upepsearch(this)" type="checkbox"  name="kaks" checked="checked" value="ON"></td></tr>
+            <tr><td width="200"><span class=caption>Reference Heatmaps:</span></td>
+					<td>
+            <input onclick="toggle_upepsearch(this)" type="checkbox"  name="refheatmaps" checked="checked" value="ON"></td></tr>
+            <tr><td width="200"><span class=caption>Strict Mode: (can be used to modify previous job)</span></td>
+					<td>
+            <input onclick="toggle_upepsearch(this)" type="checkbox"  name="strict" checked="checked" value="ON"></td></tr>
+				</table>
+				<br>
+				<span class=caption>Marked Regions:</span>
+				<table border="0" style="margin-left:30px; margin-top:10px">
+					<tr><td rowspan="5"><select name="markers" multiple size=4 onfocus="if(this.blur)this.blur()" style="width:200px; border:single" ></select></td><td></td><td class="smallcaption">Region:</td></tr>
+					<tr><td width="100" style="text-align:center"><input type="button" class="button" value="<< Add" onclick="add_option(this.form, this.form.markers, this.form.disc, this.form.start, this.form.end)" style="width: 90px"></td>
+						<td width="130" style="text-align:center"><input type="text" class="textinp" name="start" size=2><span class=caption>&nbsp;to&nbsp;</span><input type="text" class="textinp" name="end" size=2></td></tr>
+					<tr><td></td><td class="smallcaption">Description:</td></tr>
+					<tr><td style="text-align:center"><input type="button" class="button" value="Remove >>" onclick="remove_option(this.form, this.form.markers)" style="width: 90px"></td>
+						<td style="text-align:center"><input type="text" class="textinp" name="disc" size=15></td></tr>
+					<tr height="10"><td></td></tr>			
+				</table>
+				<textarea name="storage" class="seq" rows="5" cols="60" style="display:none"></textarea>
+			</div><br>
+			<a class="caption" href="javascript: void(0);" onclick="toggle(this, 'uAlignment');" onfocus="if(this.blur)this.blur()">
+			<span onmouseover="this.style.color='#045C97';" onmouseout="this.style.color='black';"><span class="indicator">+</span> Alignment Parameters</span></a><br>
+			<div id="uAlignment" style="display:none"><br>
+				<table border="0" width="250">
+				<tr><td>
+				<span class=caption>Nucleotide Match:</span></td>
+					<td><input type="text" class="textinp" name="match" size=2 value='5'></td></tr>
+				<tr><td><span class=caption>Nucleotide Mismatch:</span></td>	
+					<td><input type="text" class="textinp" name="mismatch" size=2 value='-4'></td></tr>
+				<tr><td><span class=caption>Gap Existence Penalty:</span></td>
+					<td><input type="text" class="textinp" name="existence" size=2 value='50'></td></tr>
+				<tr><td><span class=caption>Gap Extension Penalty:</span></td>	
+					<td><input type="text" class="textinp" name="extension" size=2 value='0'></td></tr>
+				</table>
+			</div><br>
+			
+			<a class="caption" href="javascript: void(0);" onclick="toggle(this, 'uHeatmaps');" onfocus="if(this.blur)this.blur()">
+			<span onmouseover="this.style.color='#045C97';" onmouseout="this.style.color='black';"><span class="indicator">+</span> Heatmap Generation</span></a><br>
+			<div id="uHeatmaps" style="display:none"><br>
+				<table border="0" style="text-align: center"><tr class="smallcaption">
+					<td width="150"></td>
+					<td width="50">Black</td>
+					<td width="50">Blue</td>
+					<td width="50">Green</td>
+					<td width="50">Yellow</td>
+					<td width="50">Red</td>
+					</tr>
+					<tr><td width="150" style="text-align: left"><span class="caption">Gradient Options:</span></td>
+					<td><input type="text" class="textinp" name="gblack" size=2 value='0'></td>
+					<td><input type="text" class="textinp" name="gblue" size=2></td>
+					<td><input type="text" class="textinp" name="ggreen" size=2 value='50'></td>
+					<td><input type="text" class="textinp" name="gyellow" size=2></td>
+					<td><input type="text" class="textinp" name="gred" size=2 value='100'></td>
+					</tr></table><br>
+				<table border="0">
+				<tr><td width="150">
+				<span class="caption">Window Size:</span></td>
+					<td width="50" style="text-align: center"><input type="text" class="textinp" name="window" size=2 value='50'></td></tr>
+				<tr><td width="150">
+				<span class="caption">Heatmap Width:</span></td>
+					<td width="50" style="text-align: center"><input type="text" class="textinp" name="heatmapsize" size=2 value='800'></td></tr>
+				</table>										
+			</div>
+		</div><br><input class="button" type="reset" style="width: 75px" value="Reset"><input type="submit" style="width: 75px" value="Submit"></form>&nbsp;
+	</div id="consUpepdiv">		
+	<div id="heatmapdiv">
+	<form method="POST" id="heatmapform" onsubmit="return validate_heatmapform(this)" onreset="return reset_heatmapform(this)" action="cgi-bin/webheatmap.py">
+		<!--<input type="hidden" name="selections">-->
+		<div class="caption">Enter your query nucleotide sequence:</div>
+		<textarea name="alignquery" class="seq" rows="5" cols="60"></textarea>
+		<p><br></p>
+		<div class="caption">Enter your reference nucleotide sequence:</div>
+		<textarea name="alignref" class="seq" rows="5" cols="60"></textarea><br><br>
+		
+		<a class="caption" href="javascript: void(0);" onclick="toggle(this, 'hSettings');" onfocus="if(this.blur)this.blur()">
+		<span onmouseover="this.style.color='#045C97';" onmouseout="this.style.color='black';"><span class="indicator">-</span> Settings</span></a><br>
+		<div id="hSettings" style="margin-left:20px"><br>
+			<a class="caption"  href="javascript: void(0);" onclick="toggle(this, 'hGeneral');" onfocus="if(this.blur)this.blur()">
+			<span onmouseover="this.style.color='#045C97';" onmouseout="this.style.color='black';"><span class="indicator">-</span> General</span></a><br>
+			<div id="hGeneral"><br>
+				<table border="0" width="200">
+					<tr><td width="120"><span class=caption>Draw CDS:</span></td>
+					<td>
+            <input type="checkbox" name="drawcds" checked="checked" value="ON"></td></tr>
+					<tr><td width="120"><span class=caption>Locate uORFs:</span></td>
+					<td>
+            <input onclick="toggle_upepsearch(this)" type="checkbox"  name="uorfs" checked="checked" value="ON"></td></tr>
+				</table>
+				<table border="0" width="350" style="margin-left:30px; margin-top:10px">
+					<tr><td width="120">
+					<span class=caption>uORF Length:</span></td>
+						<td><input type="text" class="textinp" style="text-align:right" name="min" size=2 value='20'><span class=caption>&nbsp;Codon Minimum</span></td></tr>
+					<tr><td></td>	
+						<td><input type="text" class="textinp" style="text-align:right" name="max" size=2 value='100'><span class=caption>&nbsp;Codon Maximum</span></td></tr>
+					<tr><td><span class=caption>Grace Length:</span></td>
+						<td></td></tr>
+					<tr><td style="text-align:right"><span class=caption>Allow&nbsp</span></td>
+						<td><input type="text" class="textinp" style="text-align:right" name="grace" size=2 value='20'><span class=caption> nucleotides into CDS</span></td></tr>
+				</table>			
+				<span class=caption>Marked Regions:</span>
+				<table border="0" style="margin-left:30px; margin-top:10px">
+					<tr><td rowspan="5"><select name="markers" multiple size=4 onfocus="if(this.blur)this.blur()" style="width:200px; border:single" ></select></td><td></td><td class="smallcaption">Region:</td></tr>
+					<tr><td width="100" style="text-align:center"><input type="button" class="button" value="<< Add" onclick="add_option(this.form, this.form.markers, this.form.disc, this.form.start, this.form.end)" style="width: 90px"></td>
+						<td width="130" style="text-align:center"><input type="text" class="textinp" name="start" size=2><span class=caption>&nbsp;to&nbsp;</span><input type="text" class="textinp" name="end" size=2></td></tr>
+					<tr><td></td><td class="smallcaption">Description:</td></tr>
+					<tr><td style="text-align:center"><input type="button" class="button" value="Remove >>" onclick="remove_option(this.form, this.form.markers)" style="width: 90px"></td>
+						<td style="text-align:center"><input type="text" class="textinp" name="disc" size=15></td></tr>
+					<tr height="10"><td></td></tr>			
+				</table><textarea name="storage" class="seq" rows="5" cols="60" style="display:none"></textarea>
+			</div><br>
+			
+			<a class="caption" href="javascript: void(0);" onclick="toggle(this, 'hAlignment');" onfocus="if(this.blur)this.blur()">
+			<span onmouseover="this.style.color='#045C97';" onmouseout="this.style.color='black';"><span class="indicator">+</span> Alignment Parameters</span></a><br>
+			<div id="hAlignment" style="display:none"><br>
+				<table border="0" width="220">
+				<tr><td>
+				<span class=caption>Nucleotide Match:</span></td>
+					<td><input type="text" class="textinp" name="match" size=2 value='5'></td></tr>
+				<tr><td><span class=caption>Nucleotide Mismatch:</span></td>	
+					<td><input type="text" class="textinp" name="mismatch" size=2 value='-4'></td></tr>
+				<tr><td><span class=caption>Gap Existence Penalty:</span></td>
+					<td><input type="text" class="textinp" name="existence" size=2 value='50'></td></tr>
+				<tr><td><span class=caption>Gap Extension Penalty:</span></td>	
+					<td><input type="text" class="textinp" name="extension" size=2 value='0'></td></tr>
+				</table>
+			</div><br>
+			
+			<a class="caption" href="javascript: void(0);" onclick="toggle(this, 'hHeatmaps');" onfocus="if(this.blur)this.blur()">
+			<span onmouseover="this.style.color='#045C97';" onmouseout="this.style.color='black';"><span class="indicator">+</span> Heatmap Generation</span></a><br>
+			<div id="hHeatmaps" style="display:none"><br>
+				<table border="0" style="text-align: center"><tr class="smallcaption">
+					<td width="150"></td>
+					<td width="50">Black</td>
+					<td width="50">Blue</td>
+					<td width="50">Green</td>
+					<td width="50">Yellow</td>
+					<td width="50">Red</td></tr>
+					<tr><td width="150" style="text-align: left"><span class="caption">Gradient Options:</span></td>
+					<td><input type="text" class="textinp" name="gblack" size=2 value='0'></td>
+					<td><input type="text" class="textinp" name="gblue" size=2></td>
+					<td><input type="text" class="textinp" name="ggreen" size=2 value='50'></td>
+					<td><input type="text" class="textinp" name="gyellow" size=2></td>
+					<td><input type="text" class="textinp" name="gred" size=2 value='100'></td></tr></table><br>
+				<table border="0">
+				<tr><td width="150">
+				<span class="caption">Window Size:</span></td>
+					<td width="50" style="text-align: center"><input type="text" class="textinp" name="window" size=2 value='50'></td></tr>
+				<tr><td width="150">
+				<span class="caption">Heatmap Width:</span></td>
+					<td width="50" style="text-align: center"><input type="text" class="textinp" name="heatmapsize" size=2 value='800'></td></tr>
+				</table>						
+			</div>
+		</div>
+		<div class="caption">Retrieve previous analysis:</div>
+		<input> 
+		
+		<br><input class="button" type="reset" style="width: 75px" value="Reset"><input class="button" style="width: 75px" type="submit" value="Align"></form>&nbsp;		
+	
+	</div> <!-- heatmapdiv -->
+	<div id="helpdiv">
+	 
+	 This is the help documentation for the uPEPperoni web program. Here you will find an overview of the uPEPperoni program as well as example inputs and descriptions of each of the adjustable parameters. 
+
+    uPEPperoni is divided into two subprograms, the <a href="#conserved">Conserved uPEP Search</a> utility and the <a href="#heatmap">Heatmap Generation</a> utility. You can skip the uPEPperoni overview and jump straight to the documentation of these subprograms by clicking on the respective link.
+
+    <p><b>Overview of uPEPperoni</b></p>
+    <p>
+
+    (The background section of Crowe, Wang and Rothnagel, <i>BMC Genomics 2006</i>, <b>7</b>:16 offers an excellent lead-in to the following).</p>
+
+    <p>uPEPperoni was designed to assist in the location and identification of upstream open reading frames (uORFs) that have the potential to encode bioactive peptides (uPEPs). In order to facilitate quick identification of conserved uORFs, it generates "heatmaps" that allow for visual comparison of pairs of sequences for regions of localised sequence similarity. As a result, uPEPperoni is divided into two subprograms. <i>Conserved uPEP Search</i> allows for the identification of conserved uORFs and uses the full functionality of uPEPperoni, while the <i>Heatmap Generation</i> utility generates heatmaps from any user-entered pair of sequences, and will show regions of localised sequence similarity in an arbitrary pair of nucleotide sequences.</p> 
+
+    <p>The two subprograms allow for entry into the uPEPperoni pipeline at different stages (Figure 1). The <i>Conserved uPEP Search</i> takes user-entered query sequences and compares them using BLAST to a database of eukaryotic uORFs derived from the RefSeq mRNA release datafiles. It then generates heatmaps based on the alignment of query/BLAST hit (reference) transcript pairs. The <i>Heatmap Generation</i> allows entry at this point, with user entered query/reference sequences. If the locations of the uPEP and coding sequence (CDS) are known for both transcripts, Ka/Ks ratios for both regions are calculated. Both subprograms will accept a user-entered plain sequence of nucleotides ('AATGCGATAGC...', for example), or the RefSeq accession/GI identifier of a query mRNA (eg. 'NM_003463' or 'GI:62865860'). </p>
+
+    <div align="center"><img src={{static_url("media/flowchart.png")}}></div><div align="center" style="font-size:80%"><b>Figure 1:</b> Diagram of the uPEPperoni pipeline. Coloured arrows denote variations in the pathway based on the type of query.</div>
+
+    <p>Full descriptions of the settings of each subprogram as well as <a href='examples.html'>examples</a> of each are given in the respective subprogram's documentation below.</p>
+
+
+    <p><a name='conserved'><b>Conserved uPEP Search</b></a></p>
+
+    <p>The <i>Conserved uPEP Search</i> utility (Figure 2) is the default subprogram of uPEPperoni and is displayed when the uPEPperoni main site is first loaded. It can also be accessed by selecting the <i>Conserved uPEP Search</i> tab located on the grey menu bar below the uPEPperoni logo.</p>
+
+    <div align="center"><img src={{static_url("media/conserved.png")}}></div><div align="center" style="font-size:80%"><b>Figure 2:</b> The Conserved uPEP Search form</div>
+
+    <p>The <i>Conserved uPEP Search</i> form contains a textbox for entering a query sequence (the RefSeq accession 'NM_001007775' has been entered in Figure 2), a combo box for selecting the internal uORF reference databases (the complete uORF database has been selected in Figure 2), and an expandable settings panel. The settings panel can be expanded/collapsed by clicking the "+ Settings" hyperlink and furthermore, each subsection can be expanded/collapsed by clicking on the "+ General", "+ Alignment Parameters", "+ Heatmap Generation" text hyperlinks.</p> 
+
+    <p><u>Settings - General:</u></p>
+
+    <p><u>Calculate Ka/Ks ratio:</u> Checking this option will ask uPEPperoni to estimate synonymous and nonsynonymous substitution rates using the method of Yang and Nielsen (2000), implemented in a library compiled from modified source code of the yn00 program in the PAML package (Yang 2007). The integration of this library into uPEPperoni was done with the permission of the author of PAML, Prof. Ziheng Yang.</p>
+
+    <p><u>Generate Reference Heatmaps:</u> The default behaviour of uPEPperoni after sequence pair alignment is to generate a heatmap representation of the query transcript. However, in certain situations, it is preferable to have a heatmap representation of the BLAST hit or reference sequence (one such example is in the Conserved uPEP Search documentation - Examples section). Selection of this option will generate heatmaps of both sequences involved in an alignment.
+
+    <p><u>Marked Regions:</u> The marked regions section allows you to specify domains and give them descriptions. At the moment, the descriptions aren't added to the final heatmap, so they are only useful to keep track of what has been entered. To specify a region/domain type in the start and end nucleotides in the two boxes below the small "Region:" caption. A description of the region may be entered in the box below the "Description:" caption. Press the "&lt&lt Add" button to add the domain. You can remove added domains by selecting them (use Shift or Ctrl to select multiple: Shift for ranges, Ctrl to select multiple individuals), and clicking the "Remove &gt&gt" button. The domains will show up as black bars on the heatmap.</p>
+
+    <p><u>Settings - Alignment:</u></p>
+
+    <p>Standard parameters of any sequence alignment. The "Nucleotide Match:" and "Nucleotide Mismatch:" parameters specify the reward and penalty for nucleotide matches/mismatches, while "Gap Existence Penalty:" and "Gap Extension Penalty:" specify the penalties for the opening and extension of gaps in the alignment.</p>
+
+    <p><u>Settings - Heatmap Generation:</u></p>
+
+    <p><u>Gradient Options:</u> The gradient options allow users to modify the reference colour (heat) gradient from which heatmaps are generated. Placing a value beneath a colour associates that colour with the percentage sequence identity of the value, and colours for inbetween values are linearly interpolated. Threshold values can be created by using values other than 0 and 100 at the extremes.
+
+    <p><u>Window Size:</u> This value allows users to change the size of the window used to to calculate the percentage sequence identity surrounding a nucleotide. Smaller values give greater resolution, while large values allow overall trends to be seen.</p>
+
+    <p><u>Heatmap Width:</u> This option specifies the width (in pixels) of the heatmap uPEPperoni produces.</p>
+
+    <p><b>Conserved uPEP Search - Examples</b></a></p>
+
+    <p>Examples of usage for both the Conserved uPEP search and Heatmap Generation utilities can be found <a href='examples.html'>here</a>.</p>
+
+    <p><a name='heatmap'><b>Heatmap Generation</b></a></p>
+
+    <p>The <i>Heatmap Generation</i> utility (Figure 3) can be accessed by selecting the <i>Heatmap Generation</i> tab located on the grey menu bar below the uPEPperoni logo.</p>
+
+    <div align="center"><img src={{static_url("media/heatmapform.png")}}></div><div align="center" style="font-size:80%"><b>Figure 3:</b> The Heatmap Generation form</div>
+
+    <p>The <i>Heatmap Generation</i> form contains two textboxes, one each for the query and reference sequences and an expandable settings panel. The settings panel can be expanded/collapsed by clicking the "+ Settings" hyperlink and furthermore, each subsection can be expanded/collapsed by clicking on the "+ General", "+ Alignment Parameters", "+ Heatmap Generation" text hyperlinks.</p> 
+
+    <p><u>Settings - General:</u></p>
+
+    <p><u>Draw CDS:</u> If a RefSeq accession query is given, the coding sequence (CDS) of the query sequence will be shown on the final heatmap.</p>
+
+    <p><u>Locate uORFs:</u> If a RefSeq accession query is given, any uORFs matching the entered parameters will be shown on the final heatmap. The parameters allow the user to modify the minimum and maximum size of a uORF as well as how many nucleotides into the CDS a uORF is allowed.</p>
+
+    <p><u>Marked Regions:</u> The marked regions section allows you to specify domains and give them descriptions. At the moment, the descriptions aren't added to the final heatmap, so they are only useful to keep track of what has been entered. To specify a region/domain type in the start and end nucleotides in the two boxes below the small "Region:" caption. A description of the region may be entered in the box below the "Description:" caption. Press the "&lt&lt Add" button to add the domain. You can remove added domains by selecting them (use Shift or Ctrl to select multiple: Shift for ranges, Ctrl to select multiple individuals), and clicking the "Remove &gt&gt" button. The domains will show up as black bars on the heatmap.</p>
+
+    <p><u>Settings - Alignment:</u></p>
+
+    <p>Standard parameters of any sequence alignment. The "Nucleotide Match:" and "Nucleotide Mismatch:" parameters specify the reward and penalty for nucleotide matches/mismatches, while "Gap Existence Penalty:" and "Gap Extension Penalty:" specify the penalties for the opening and extension of gaps in the alignment.</p>
+
+    <p><u>Settings - Heatmap Generation:</u></p>
+
+    <p><u>Gradient Options:</u> The gradient options allow users to modify the reference colour (heat) gradient from which heatmaps are generated. Placing a value beneath a colour associates that colour with the (sequence) percentage identity of the value, and colours for inbetween values are linearly interpolated. Threshold values can be created by using values other than 0 and 100 at the extremes.
+
+    <p><u>Window Size:</u> This value allows users to change the size of the window used to to calculate the percentage sequence identity surrounding a nucleotide. Smaller values give greater resolution, while large values allow overall trends to be seen.</p>
+
+    <p><u>Heatmap Width:</u> This option specifies the width (in pixels) of the heatmap uPEPperoni produces.</p>
+
+    <p><b>Acknowledgements</b></p>
+
+    <p>The authors of uPEPperoni would like to thank Prof. Ziheng Yang for his permission to include libraries generated from his <a href='http://abacus.gene.ucl.ac.uk/software/paml.html'>PAML</a> source code.</p>
+
+    <p><b>References</b></p>
+
+    <p>Yang, Z. 2007. PAML 4: a program package for phylogenetic analysis by maximum likelihood. <i>Molecular Biology and Evolution</i> <b>24</b>: 1586-1591.</p>
+
+    <p>Yang, Z., and R. Nielsen. 2000. Estimating synonymous and nonsynonymous substitution rates under realistic
+       evolutionary models. <i>Molecular Biology and Evolution</i> <b>17</b>: 32-43.</p>
+	</div> <!-- helpdiv -->
+						
+   </div> <!-- contentframe -->
+     
+  </div> <!-- maincontainer -->
+
+  <div id="footer-spacer"></div>
+	
+</div>
+
+<div id="footer">
+	Fixed footer.
+</div>
+
+<script type="text/javascript">
+var queries=new ddtabcontent("querytype")
+queries.setpersist(true)
+queries.setselectedClassTarget("linkparent") //"link" or "linkparent"
+queries.init()
+</script>
+
+</body>
+</html>

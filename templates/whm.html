@@ -1,0 +1,126 @@
+﻿{% extends "layout.html"%}
+
+{% block title %}{{title}}{% end %}
+{% block content %}
+﻿<form target="_blank" method="post" action="/whm/process">
+    <div class="caption">Enter your query nucleotide sequence:</div>
+	<textarea name="alignquery" class="seq" rows="5" cols="60" required></textarea><br><br>
+	<div class="caption">Enter your reference nucleotide sequence:</div>
+	<textarea name="alignref" class="seq" rows="5" cols="60" required></textarea><br><br>
+    <div class="caption"><p>Choose starting codon:</p></div>
+        <select style="width:80px; border:single" name="codon">
+	        <optgroup label="Codon:">
+                {% for codon in codons%}
+		            <option>{{codon.upper()}}</option>
+                {% end %}
+		    </optgroup>				
+        </select>
+    <div class="caption"><p>Choose RefSeq database version:</p></div>
+		<select style="width:160px; border:single" name="database_version">
+		    <optgroup label="Refseq Database Versions:">
+		   	    <option>75</option>
+		    </optgroup>
+		</select>
+	
+	<div id="uSettings" style="margin-left:20px"><br>
+			<span>General options:</span><br>
+			<div id="uGeneral"><br>
+				<table border="0" width="200">
+					<tr><td width="200"><span class=caption>Draw CDS:</span></td>
+					<td>
+            <input type="checkbox"  name="drawcds" checked="checked" value="ON"></td></tr>
+            <tr><td width="200"><span class=caption>Locate uORFs:</span></td>
+					<td>
+            <input type="checkbox"  name="uorfs" checked="checked" value="ON"></td></tr>
+            
+					
+            <div id="hGeneral"><br>
+				<table border="0" width="350" style="margin-left:30px; margin-top:10px">
+					<tr><td width="120">
+					<span class=caption>uORF Length:</span></td>
+						<td><input type="text" class="textinp" style="text-align:right" name="min" size=2 value='20'><span class=caption>&nbsp;Codon Minimum</span></td></tr>
+					<tr><td></td>	
+						<td><input type="text" class="textinp" style="text-align:right" name="max" size=2 value='100'><span class=caption>&nbsp;Codon Maximum</span></td></tr>
+					<tr><td><span class=caption>Grace Length:</span></td>
+						<td></td></tr>
+					<tr><td style="text-align:right"><span class=caption>Allow&nbsp</span></td>
+						<td><input type="text" class="textinp" style="text-align:right" name="grace" size=2 value='20'><span class=caption> nucleotides into CDS</span></td></tr>
+				</table>
+				</table>
+				<span class=caption>Marked Regions:</span>
+				<table border="0" style="margin-left:30px; margin-top:10px">
+					<tr><td rowspan="5"><select name="markers" multiple size=4 onfocus="if(this.blur)this.blur()" style="width:200px; border:single" ></select></td><td></td><td class="smallcaption">Region:</td></tr>
+					<tr><td width="100" style="text-align:center"><input type="button" class="button" value="<< Add" onclick="add_option(this.form, this.form.markers, this.form.disc, this.form.start, this.form.end)" style="width: 90px"></td>
+						<td width="130" style="text-align:center"><input type="text" class="textinp" name="start" size=2><span class=caption>&nbsp;to&nbsp;</span><input type="text" class="textinp" name="end" size=2></td></tr>
+					<tr><td></td><td class="smallcaption">Description:</td></tr>
+					<tr><td style="text-align:center"><input type="button" class="button" value="Remove >>" onclick="remove_option(this.form, this.form.markers)" style="width: 90px"></td>
+						<td style="text-align:center"><input type="text" class="textinp" name="disc" size=15></td></tr>
+					<tr height="10"><td></td></tr>			
+				</table><textarea name="storage" class="seq" rows="5" cols="60" style="display:none"></textarea>
+			</div>
+				<br>
+			<div class="panel-group">
+                <div class="panel=heading">
+                    <span class="panel-title">
+                        <a data-toggle="collapse" href="#collapse1">+ Alignment Parameters</a>
+                    </span>
+                </div>
+                <div id="collapse1" class="panel-collapse collapse">
+                    <div class="panel-body">
+                        <div id="uAlignment"<br>
+				        <table border="0" width="250">
+				        <tr><td>
+				        <span class=caption>Nucleotide Match:</span></td>
+					        <td><input type="text" class="textinp" name="match" size=2 value='5'></td></tr>
+				        <tr><td><span class=caption>Nucleotide Mismatch:</span></td>	
+					        <td><input type="text" class="textinp" name="mismatch" size=2 value='-4'></td></tr>
+				        <tr><td><span class=caption>Gap Existence Penalty:</span></td>
+					        <td><input type="text" class="textinp" name="existence" size=2 value='50'></td></tr>
+				        <tr><td><span class=caption>Gap Extension Penalty:</span></td>	
+					        <td><input type="text" class="textinp" name="extension" size=2 value='0'></td></tr>
+				        </table>
+			            </div>
+                    </div>
+                </div>
+            </div>
+			<br>
+			<div class="panel-group">
+                <div class="panel=heading">
+                    <span class="panel-title">
+                        <a data-toggle="collapse" href="#collapse2">+ Heatmap Generation</a>
+                    </span>
+                </div>
+                <div id="collapse2" class="panel-collapse collapse">
+                    <div class="panel-body">
+			            <div id="uHeatmaps"><br>
+				            <table border="0" style="text-align: center"><tr class="smallcaption">
+					            <td width="150"></td>
+					            <td width="50">Black</td>
+					            <td width="50">Blue</td>
+					            <td width="50">Green</td>
+					            <td width="50">Yellow</td>
+					            <td width="50">Red</td>
+					            </tr>
+					            <tr><td width="150" style="text-align: left"><span class="caption">Gradient Options:</span></td>
+					            <td><input type="text" class="textinp" name="gblack" size=2 value='0'></td>
+					            <td><input type="text" class="textinp" name="gblue" size=2></td>
+					            <td><input type="text" class="textinp" name="ggreen" size=2 value='50'></td>
+					            <td><input type="text" class="textinp" name="gyellow" size=2></td>
+					            <td><input type="text" class="textinp" name="gred" size=2 value='100'></td>
+					            </tr></table><br>
+				            <table border="0">
+				            <tr><td width="150">
+				            <span class="caption">Window Size:</span></td>
+					            <td width="50" style="text-align: center"><input type="text" class="textinp" name="window" size=2 value='50'></td></tr>
+				            <tr><td width="150">
+				            <span class="caption">Heatmap Width:</span></td>
+					            <td width="50" style="text-align: center"><input type="text" class="textinp" name="heatmapsize" size=2 value='800'></td></tr>
+				            </table>										
+			            </div>
+		            </div>
+	            </div>
+            </div>
+<br />
+<input type="submit" value="Submit">
+</form>
+{% end %}
