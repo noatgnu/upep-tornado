@@ -34,12 +34,7 @@ Database building info:
         + python
         + from upep_helper import helpersetting
         + codons = helpersetting.STARTING_CODONS
-        + key = <one of the following 'RefSeq-complete',
-                                      'RefSeq-fungi',
-                                      'RefSeq-invertebrate',
-                                      'RefSeq-plant',
-                                      'RefSeq-vertebrate_mammalian',
-                                      'RefSeq-vertebrate_other'>
+        + key = <one of the following 'RefSeq-complete', 'RefSeq-fungi', 'RefSeq-invertebrate', 'RefSeq-plant', 'RefSeq-vertebrate_mammalian', 'RefSeq-vertebrate_other'>
         + from upep_helper import helpertask
         + helpertasks.upephelper_processing(key, codons, 'True')
                                     
