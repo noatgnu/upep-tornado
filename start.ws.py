@@ -26,74 +26,74 @@ class wsUI(tornado.web.RequestHandler):
         self.render("websocket.html")
 
 class WebSocketHandler(websocket.WebSocketHandler):
+    # Websocket Handling and processing information.
     def open(self):
+        # When the socket is opened, do nothing.
         pass
 
     @gen.coroutine
     def on_message(self, parameters):
+        # Receiving JSON dictionary after the user had submitted the uPEP form. The dictionary contained all the necessary parameters for running a uPEP query.
+        input_p = json.loads(parameters) # Decode JSON dictionary into a normal Python dictionary.
+        #print(input_p)
+        pool = ThreadPoolExecutor(max_workers=settingmain.MAX_WORKERS) # Setting up multi-thread.
         
-        input_p = json.loads(parameters)
-        print(input_p)
-        q = Queue(connection=Redis())
-        pool = ThreadPoolExecutor(max_workers=settingmain.MAX_WORKERS)
-        
-        if input_p['task'] == 1:
+        if input_p['task'] == 1: # Use the information from the dictionary and begin the uPEP query in another thread. If the job has not existed in the database before, start a new job.
             yield pool.submit(self.uPEPdataprocessor, input_p['unid'], input_p['timeid'], input_p['codon'], input_p['dbv'], input_p['seqquery'], input_p['db'], input_p['min'], input_p['max'], input_p['grace'], input_p['hms'], input_p['kaks'], input_p['window'], input_p['gradi'], input_p['rhm'])
-        if input_p['task'] == 0:
+            pool.shutdown() # Shut down the thread.
+        if input_p['task'] == 0: # If the job is within the database, submit the complete signal and lead the user to the result page.
             self.write_message('Complete.')
-            
-            #weboutput(self, input_p['unid'], input_p['filter'], input_p['strict'])
-        #if input_p['task'] == 0:
-            #weboutput(self, input_p['unid'], input_p['filter'], input_p['strict'])
-            
-        
-        #weboutput(unid, timeid, codon, dbv, seqquery,
-                              #db_name, minm,
-                              #maxm, gracem, hms, kaks,
-                              #window, gradi, refheatmaps)
-         
-    def on_close(self):
+    def on_close(self): # When the socket is closed, do nothing.
         pass
     
     def uPEPdataprocessor(self, unique_file_id, tid, cod, db_version, seqqu, database_n, minm, maxm, gracem, heatms, KaKs_t, window_t, grad, refhm):
+        # uPEP main query processing function.
+        upep_loc = upepsetting.APP_ROOT # Location of upep application.
+        apps_loc = upepsetting.APPS # Location of sub-apps within upep.
+        lagan_loc = upepsetting.LAGAN # Location of lagan.
         
-        upep_loc = upepsetting.APP_ROOT
-        apps_loc = upepsetting.APPS
-        lagan_loc = upepsetting.LAGAN
+        data_loc = upepsetting.DATA # Location of upep-generated data storage location.
+        database = upepsetting.UPEPHELPER_DATABASE # Location of upep database.
         
-        upeplib_loc = upepsetting.UPEPLIB
-        data_loc = upepsetting.DATA
-        database = upepsetting.UPEPHELPER_DATABASE
-
-        dbuser = upepsetting.DATABASES["default"]["USER"]
+        # Loading MYSQL setting for uPEP
+        dbuser = upepsetting.DATABASES["default"]["USER"] 
         dbpass = str(upepsetting.DATABASES["default"]["PASSWORD"])
         dbhost = upepsetting.DATABASES["default"]["HOST"]
         daba = upepsetting.DATABASES["default"]["DB"]
 
+        # Setting up uniqe file id and its filepath.
         tempfilename = os.path.join(data_loc, unique_file_id)
-
+        # Turn codon submission into lower case.
         codon = cod.replace("U", "t").replace("A", "a").replace("G", "g").replace("C", "c")
         
+        # Setting up filepath for each database.
         mammaldb = os.path.join(database, db_version + upepsetting.MAMMAL + codon + ".db")
         non_mammalvertdb = os.path.join(database, db_version + upepsetting.NON_MAMMALIAN_VERTEBRATES + codon + ".db")
         invertdb = os.path.join(database, db_version + upepsetting.INVERTEBRATES + codon + ".db")
         plantdb = os.path.join(database, db_version + upepsetting.PLANTS + codon + ".db")
         fungidb = os.path.join(database, db_version + upepsetting.FUNGI + codon + ".db")
         completedb = os.path.join(database + db_version + upepsetting.COMPLETE + codon + ".db")
+        
+        # Setting up MYSQL connection
         dbcon = MySQLdb.connect(user=dbuser, passwd=dbpass, host=dbhost, db=daba)
         cursor = dbcon.cursor()
         codon_aminoa = {"AUG": "M", "AUA": "I", "AUC": "I", "ACG": "T", "AUU": "I", "AAG": "K", "AGG": "R", "CUG": "L",
                         "UUG": "L", "GUG": "V"}
         
-        sql_insert_query_info = """INSERT INTO query_info (time_id, unique_id , seqquery, database_name, db_version, protein_name, tempfilename, initial_flag, trivial_flag, blastmacthes_flag, CDSKaKs_flag, uPEPKaKs_flag, heatmap_flag, window, Refheatmap, starting_aa) VALUES (from_unixtime("%f"), "%s", 0, 0, 0, 0, "%s", 0, 0, 0, 0, 0, 0, 0, 0, "%s");"""
+        sql_insert_query_info = """INSERT INTO query_info (time_id, unique_id , seqquery, database_name, db_version, protein_name, tempfilename, initial_flag, trivial_flag, blastmacthes_flag, CDSKaKs_flag, uPEPKaKs_flag, heatmap_flag, window, Refheatmap, starting_aa) VALUES (from_unixtime(%s), %s, 0, 0, 0, 0, %s, 0, 0, 0, 0, 0, 0, 0, 0, %s);"""
         
         #print(sql_insert_query_info % (tid, unique_file_id, tempfilename, codon_aminoa[cod]))
-        cursor.execute(sql_insert_query_info % (tid, unique_file_id, tempfilename, codon_aminoa[cod]))
+        # Execute the initial insert
+        cursor.execute(sql_insert_query_info, (str(tid), unique_file_id, tempfilename, codon_aminoa[cod],))
         dbcon.commit()
         cursor.close()
         dbcon.close()
+        
+        
         CDSfeature = []
         calcKaKs = True
+        
+        # Dictionary to connect database path and actual name of the database
         dictionaries = dict([("Human", [[mammaldb], "Homo sapiens"]),
                              ("Mouse", [[mammaldb], "Mus musculus"]),
                              ("Mammals", [[mammaldb], None]),
@@ -103,24 +103,35 @@ class WebSocketHandler(websocket.WebSocketHandler):
                              ("Plants", [[plantdb], None]),
                              ("Fungi", [[fungidb], None]),
                              ("Complete", [[completedb], None])])
+        
+        # Setting table name with appropriate database version.
         dbstuff = db_version + upepsetting.DBRE[database_n]
 
         if seqqu:
+            # Remove newline and space from the input sequence.
             seqquery = seqqu.upper().replace("\n", "").replace("\r", "").replace(" ", "")
+            # Check if the input is an accession id.
             if (seqquery[:3] == "NM_") or (seqquery[:3] == "XM_") or (seqquery[:3] == "GI:"):
+                
                 queryname = seqquery
                 calcKaKs = True
+                
                 mRNAparams = [0, 0, 20]
+                # Setting mRNA parameter for getmRNA query.
                 if minm:
                     mRNAparams[0] = int(minm)
                 if maxm:
                     mRNAparams[1] = int(maxm)
                 if gracem:
                     mRNAparams[2] = int(gracem)
+                    
                 self.write_message("Started query through accession ID.")
+                
+                # Run the function to obtain the sequence of the accession id.
                 details = accessions.getmRNA(seqquery, dbstuff, codon, mRNAparams[0] * 3, mRNAparams[1] * 3,
                                              mRNAparams[2])
                 if details:
+                    # Return the result out of loop.
                     alignquery = details[0]
                     blastquery = alignquery[
                                  :details[1][0] + mRNAparams[2]]  # send only the 5"UTR + grace of alignquery to tblastx.py
@@ -129,17 +140,18 @@ class WebSocketHandler(websocket.WebSocketHandler):
                     dbcon = MySQLdb.connect(user=dbuser, passwd=dbpass, host=dbhost, db=daba)
                     cursor = dbcon.cursor()
                     
-                    sql_update_query_info = """UPDATE query_info SET seqquery = "%s", database_name = "%s", db_version = "%s", protein_name = "%s", initial_flag = 2 WHERE unique_id = "%s";"""
+                    sql_update_query_info = """UPDATE query_info SET seqquery = %s, database_name = %s, db_version = %s, protein_name = %s, initial_flag = 2 WHERE unique_id = """+unique_file_id+""";"""
                     
-                    cursor.execute(sql_update_query_info % (seqquery, database_n, db_version, details[3], unique_file_id))
+                    # Add 
+                    cursor.execute(sql_update_query_info, (seqquery, database_n, db_version, details[3],))
                     dbcon.commit()
                     cursor.close()
                     dbcon.close()
                 else:
                     dbcon = MySQLdb.connect(user=dbuser, passwd=dbpass, host=dbhost, db=daba)
                     cursor = dbcon.cursor()
-                    sql_update_query_info = """UPDATE query_info SET seqquery = "%s", database_name = "%s", db_version = "%s", initial_flag = 1 WHERE unique_id = "%s";"""
-                    cursor.execute(sql_update_query_info % (seqquery, database_n, db_version, unique_file_id))
+                    sql_update_query_info = """UPDATE query_info SET seqquery = %s, database_name = %s, db_version = %s, initial_flag = 1 WHERE unique_id = """+unique_file_id+""";"""
+                    cursor.execute(sql_update_query_info, (seqquery, database_n, db_version,))
                     dbcon.commit()
                     cursor.close()
                     dbcon.close()
@@ -150,8 +162,8 @@ class WebSocketHandler(websocket.WebSocketHandler):
                 queryname = "Query"
                 dbcon = MySQLdb.connect(user=dbuser, passwd=dbpass, host=dbhost, db=daba)
                 cursor = dbcon.cursor()
-                sql_update_query_info = """UPDATE query_info SET seqquery = "Query", database_name = "%s", db_version = "%s", initial_flag = 3 WHERE unique_id = "%s";"""
-                cursor.execute(sql_update_query_info % (database_n, db_version, unique_file_id))
+                sql_update_query_info = """UPDATE query_info SET seqquery = %s, database_name = %s, db_version = %s, initial_flag = 3 WHERE unique_id = """+unique_file_id+""";"""
+                cursor.execute(sql_update_query_info, ('Query',database_n, db_version,))
                 dbcon.commit()
                 cursor.close()
                 dbcon.close()
@@ -166,24 +178,24 @@ class WebSocketHandler(websocket.WebSocketHandler):
                 if heatms == '':
                     dbcon = MySQLdb.connect(user=dbuser, passwd=dbpass, host=dbhost, db=daba)
                     cursor = dbcon.cursor()
-                    sql_update_query_info = """UPDATE query_info SET heatmap_flag = 1 WHERE unique_id = "%s";"""
-                    cursor.execute(sql_update_query_info % (unique_file_id))
+                    sql_update_query_info = """UPDATE query_info SET heatmap_flag = 1 WHERE unique_id = """+unique_file_id+""";"""
+                    cursor.execute(sql_update_query_info)
                     dbcon.commit()
                     cursor.close()
                     dbcon.close()
-
+                    # Error due to no heatms input
                     return 0
                 heatmapsize = int(heatms)
                 print(heatmapsize)
                 if (heatmapsize < 400) or (heatmapsize > 10000):
                     dbcon = MySQLdb.connect(user=dbuser, passwd=dbpass, host=dbhost, db=daba)
                     cursor = dbcon.cursor()
-                    sql_update_query_info = """UPDATE query_info SET heatmap_flag = 2 WHERE unique_id = "%s";"""
-                    cursor.execute(sql_update_query_info % (unique_file_id))
+                    sql_update_query_info = """UPDATE query_info SET heatmap_flag = 2 WHERE unique_id = """+unique_file_id+""";"""
+                    cursor.execute(sql_update_query_info)
                     dbcon.commit()
                     cursor.close()
                     dbcon.close()
-
+                    # Error due to heatms is not between 400 and 10000
                     return 0
                 blastmatches = tblastx.blastit(blastquery, dictionaries[database_n], data_loc)
                 n = 0
@@ -193,61 +205,65 @@ class WebSocketHandler(websocket.WebSocketHandler):
                 if len(blastmatches) == 0:
                     dbcon = MySQLdb.connect(user=dbuser, passwd=dbpass, host=dbhost, db=daba)
                     cursor = dbcon.cursor()
-                    sql_update_query_info = """UPDATE query_info SET blastmacthes_flag = 1 WHERE unique_id = "%s";"""
-                    cursor.execute(sql_update_query_info % (unique_file_id))
+                    sql_update_query_info = """UPDATE query_info SET blastmacthes_flag = 1 WHERE unique_id = """+unique_file_id+""";"""
+                    cursor.execute(sql_update_query_info)
                     dbcon.commit()
                     cursor.close()
                     dbcon.close()
-
+                    # Error due to No blast matches found.
+                    self.write_message("No Blast matches found.")
                     return 0
                 elif len(blastmatches) == 1:
-
+                    # Only one match found
                     dbcon = MySQLdb.connect(user=dbuser, passwd=dbpass, host=dbhost, db=daba)
                     cursor = dbcon.cursor()
-                    sql_update_query_info = """UPDATE query_info SET blastmacthes_flag = 2 WHERE unique_id = "%s";"""
+                    sql_update_query_info = """UPDATE query_info SET blastmacthes_flag = 2 WHERE unique_id = """+unique_file_id+""";"""
 
-                    cursor.execute(sql_update_query_info % (unique_file_id))
+                    cursor.execute(sql_update_query_info)
                     dbcon.commit()
-                    sql_insert_query_matchnumber = """INSERT INTO query_matchnumber (time_id, unique_id , match_number) VALUES (current_timestamp, "%s", "%i");"""
-                    cursor.execute(sql_insert_query_matchnumber % (unique_file_id, len(blastmatches)))
+                    sql_insert_query_matchnumber = """INSERT INTO query_matchnumber (time_id, unique_id , match_number) VALUES (current_timestamp, %s, %i);"""
+                    cursor.execute(sql_insert_query_matchnumber, (unique_file_id, len(blastmatches),))
                     dbcon.commit()
                     cursor.close()
                     dbcon.close()
                 else:
-
+                    # More than 1 match found.
                     dbcon = MySQLdb.connect(user=dbuser, passwd=dbpass, host=dbhost, db=daba)
                     cursor = dbcon.cursor()
-                    sql_update_query_info = """UPDATE query_info SET blastmacthes_flag = 3 WHERE unique_id = "%s";"""
-                    cursor.execute(sql_update_query_info % (unique_file_id))
+                    sql_update_query_info = """UPDATE query_info SET blastmacthes_flag = 3 WHERE unique_id = """+unique_file_id+""";"""
+                    cursor.execute(sql_update_query_info)
                     dbcon.commit()
-                    sql_insert_query_matchnumber = """INSERT INTO query_matchnumber (time_id, unique_id , match_number) VALUES (current_timestamp, "%s", "%i");"""
-                    cursor.execute(sql_insert_query_matchnumber % (unique_file_id, len(blastmatches)))
+                    sql_insert_query_matchnumber = """INSERT INTO query_matchnumber (time_id, unique_id , match_number) VALUES (current_timestamp, %s, %i);"""
+                    cursor.execute(sql_insert_query_matchnumber, (unique_file_id, len(blastmatches),))
                     dbcon.commit()
                     cursor.close()
                     dbcon.close()
                 
                 self.write_message("Analyzing each Blast result.")
-                print(blastmatches[0])
+                #print(blastmatches[0])
                 for blastmatch in blastmatches:
                     n += 1
                     hitdef = blastmatch[0][3:blastmatch[0].find("_", 6)]  ##Extract RefSeq Accession
                     self.write_message("%s" % (hitdef))
                     uPEPloc = eval(blastmatch[0][blastmatch[0].find("["):])  ##Extract uPEP location
                     if hitdef == seqquery:
+                        # Hit with the same Accession id
                         self.write_message("- Trivial hit.")
                         dbcon = MySQLdb.connect(user=dbuser, passwd=dbpass, host=dbhost, db=daba)
                         cursor = dbcon.cursor()
-                        sql_update_query_info = """UPDATE query_info SET trivial_flag = 1 WHERE unique_id = "%s";"""
+                        sql_update_query_info = """UPDATE query_info SET trivial_flag = 1 WHERE unique_id = """+unique_file_id+""";"""
                         cursor.execute(sql_update_query_info % (unique_file_id))
                         dbcon.commit()
-                        sql_insert_query_trivial = """INSERT INTO query_trivial (time_id, unique_id, hitdef) VALUES (current_timestamp, "%s", "%s");"""
-                        cursor.execute(sql_insert_query_trivial % (unique_file_id, hitdef))
+                        sql_insert_query_trivial = """INSERT INTO query_trivial (time_id, unique_id, hitdef) VALUES (current_timestamp, %s, %s);"""
+                        cursor.execute(sql_insert_query_trivial, (unique_file_id, hitdef,))
                         dbcon.commit()
                         
                         cursor.close()
                         dbcon.close()
                         continue
+                    # Query database for transcript sequence from hitdef
                     details = accessions.getmRNA(hitdef, dbstuff, codon, 60, 300, 20)
+                    
                     if details:
                         alignref = details[0]
 
@@ -259,8 +275,8 @@ class WebSocketHandler(websocket.WebSocketHandler):
 
                     dbcon = MySQLdb.connect(user=dbuser, passwd=dbpass, host=dbhost, db=daba)
                     cursor = dbcon.cursor()
-                    sql_insert_query_non_trvial = """INSERT INTO query_non_trivial (time_id, unique_id, protein_name, input_sequence, target_organism, input_hitdef, input_starting_position, input_ending_position, alignment, target_sequence, target_hitdef, target_starting_position, target_ending_position, upep_kaks, cds_kaks) VALUES (current_timestamp, "%s", "%s", "%s", "%s", "%s", "%i", "%i", "%s", "%s", "%s", "%i", "%i", 0, 0);"""
-                    cursor.execute(sql_insert_query_non_trvial % (unique_file_id, details[3], blastmatch[5], details[4], queryname, blastmatch[2][0], blastmatch[2][1], blastmatch[7], blastmatch[6], hitdef, uPEPloc[0] + blastmatch[3][0] - 1, uPEPloc[0] + blastmatch[3][1] - 1))
+                    sql_insert_query_non_trvial = """INSERT INTO query_non_trivial (time_id, unique_id, protein_name, input_sequence, target_organism, input_hitdef, input_starting_position, input_ending_position, alignment, target_sequence, target_hitdef, target_starting_position, target_ending_position, upep_kaks, cds_kaks) VALUES (current_timestamp, %s, %s, %s, %s, %s, %i, %i, %s, %s, %s, %s, %s, 0, 0);"""
+                    cursor.execute(sql_insert_query_non_trvial, (unique_file_id, details[3], blastmatch[5], details[4], queryname, str(blastmatch[2][0]), str(blastmatch[2][1]), blastmatch[7], blastmatch[6], hitdef, str(uPEPloc[0] + blastmatch[3][0] - 1), str(uPEPloc[0] + blastmatch[3][1] - 1),)
 
                     dbcon.commit()
                     cursor.close()
@@ -268,16 +284,18 @@ class WebSocketHandler(websocket.WebSocketHandler):
                     ### GET DETAILS FOR KaKs -- yn00 ####
                     
                     if KaKs_t == 1 and calcKaKs:
+                        # Start KaKs evaluation.
                         self.write_message("- Calculating KaKs.")
                         dbcon = MySQLdb.connect(user=dbuser, passwd=dbpass, host=dbhost, db=daba)
                         cursor = dbcon.cursor()
-                        sql_update_query_info = """UPDATE query_info SET CDSKaKs_flag = 1, uPEPKaKs_flag = 1 WHERE unique_id = "%s";"""
-                        cursor.execute(sql_update_query_info % (unique_file_id))
+                        sql_update_query_info = """UPDATE query_info SET CDSKaKs_flag = 1, uPEPKaKs_flag = 1 WHERE unique_id = """+unique_file_id+""";"""
+                        cursor.execute(sql_update_query_info)
                         dbcon.commit()
                         
                         cursor.close()
                         dbcon.close()
-
+                        
+                        # Create array to hold parameter for analysis
                         uPEPpair = [changedseq[blastmatch[2][0] - 1:blastmatch[2][1]],
                                     alignref[uPEPloc[0] + blastmatch[3][0] - 2: uPEPloc[0] + blastmatch[3][1] - 1]]
                         CDSpair = []
@@ -285,7 +303,9 @@ class WebSocketHandler(websocket.WebSocketHandler):
                             CDSpair = [changedseq[CDSfeature[0] - 1:CDSfeature[1] - 3], alignref[
                                                                                         details[1][0] - 1:details[1][
                                                                                                               1] - 3]]  ### -1 to correct for python sequences // -3 to remove stop codon
+                        # If the two sequences had similar length
                         if len(uPEPpair[0]) == len(uPEPpair[1]):
+                            # Create temporary file for KaKs calculation with yn00
                             with open(tempfilename + "yn00", "wt") as yn00file:
                                 yn00file.write("  2  %i\r\n" % (len(uPEPpair[0])))
                                 yn00file.write("query\r\n" + uPEPpair[0] + "\r\n" + "ref\r\n" + uPEPpair[1] + "\r\n")
@@ -298,11 +318,16 @@ class WebSocketHandler(websocket.WebSocketHandler):
                                 #yn00file.close()
                               
                             #retcode = subprocess.check_call([apps_loc+ "/yn00", tempfilename+ "yn00", tempfilename + "yn00" + "uPEP"])
-
+                            # Call on yn00 to process the file
                             retcode = subprocess.call([apps_loc+ "/yn00", tempfilename+ "yn00", tempfilename + "yn00" + "uPEP"], stdout=sys.stderr, stderr=sys.stderr)
                             
+                            # Remove temporary file
                             os.remove(tempfilename + "yn00")
+                            
+                            # Open kaks result
                             kaksfile = open(tempfilename + "yn00" + "uPEP", "rt")
+                            
+                            # Parse out kaks result from the file
                             try:
                                 try:
                                     for i in range(0, 6):
@@ -315,48 +340,54 @@ class WebSocketHandler(websocket.WebSocketHandler):
                                     sys.stderr.flush()
                             finally:
                                 kaksfile.close()
+                            
+                            # remove the result file
                             os.remove(tempfilename + "yn00" + "uPEP")
+                            
+                            # Set flag as success
                             KaKs_success = True
+                            
                             try:
                                 Ka = abs(float(kaksuPEP[1]))
                                 Ks = abs(float(kaksuPEP[2]))
                                 KaKs = abs(float(kaksuPEP[0]))
                             except:
+                                # If this operation false, flag set to false
                                 KaKs_success = False
                             if not KaKs_success:
                                 n += 1
-
+                                # If kaks_success failed, submit log failure to sql
                                 kkr = "Unable to estimate Ka/Ks ratio of uPEP."
                                 dbcon = MySQLdb.connect(user=dbuser, passwd=dbpass, host=dbhost,
                                                                 db=daba)
                                 cursor = dbcon.cursor()
                                 sql_update_query_non_trivial = (
-                                """UPDATE query_non_trivial SET upep_kaks = "%i" WHERE (unique_id = "%s" and target_hitdef = "%s");""")
-                                cursor.execute(sql_update_query_non_trivial % (n, unique_file_id, hitdef))
+                                """UPDATE query_non_trivial SET upep_kaks = %s WHERE (unique_id = """+unique_file_id+""" and target_hitdef = """+hitdef+""");""")
+                                cursor.execute(sql_update_query_non_trivial, (str(n),))
                                 dbcon.commit()
                                 sql_insert_query_uPEP_KaKs = (
-                                    """INSERT INTO query_uPEP_KaKs (time_id, unique_id, hitdef, KaKs, upep_kaks_trigger) VALUES (current_timestamp, "%s", "%s", "%s", "%i");""")
+                                    """INSERT INTO query_uPEP_KaKs (time_id, unique_id, hitdef, KaKs, upep_kaks_trigger) VALUES (current_timestamp, %s, %s, %s, %s);""")
 
-                                cursor.execute(sql_insert_query_uPEP_KaKs % (unique_file_id, hitdef, kkr, n))
+                                cursor.execute(sql_insert_query_uPEP_KaKs, (unique_file_id, hitdef, kkr, str(n),))
                                 dbcon.commit()
                                 cursor.close()
                                 dbcon.close()
                             if Ks == 0:
                                 n += 1
-
+                                
                                 kkr = "Estimated uPEP Ka/Ks ratio: N/A (Ka: %.4f, Ks: %.4f)" % (
                                     Ka, Ks)
                                 dbcon = MySQLdb.connect(user=dbuser, passwd=dbpass, host=dbhost,
                                                                 db=daba)
                                 cursor = dbcon.cursor()
                                 sql_update_query_non_trivial = (
-                                """UPDATE query_non_trivial SET upep_kaks = "%i" WHERE (unique_id = "%s" and target_hitdef = "%s");""")
-                                cursor.execute(sql_update_query_non_trivial % (n, unique_file_id, hitdef))
+                                """UPDATE query_non_trivial SET upep_kaks = %s WHERE (unique_id = """+unique_file_id+""" and target_hitdef = """+hitdef+""");""")
+                                cursor.execute(sql_update_query_non_trivial, (str(n),))
                                 dbcon.commit()
                                 sql_insert_query_uPEP_KaKs = (
-                                    """INSERT INTO query_uPEP_KaKs (time_id, unique_id, hitdef, KaKs, upep_kaks_trigger) VALUES (current_timestamp, "%s", "%s", "%s", "%i");""")
+                                    """INSERT INTO query_uPEP_KaKs (time_id, unique_id, hitdef, KaKs, upep_kaks_trigger) VALUES (current_timestamp, %s, %s, %s, %s);""")
 
-                                cursor.execute(sql_insert_query_uPEP_KaKs % (unique_file_id, hitdef, kkr, n))
+                                cursor.execute(sql_insert_query_uPEP_KaKs, (unique_file_id, hitdef, kkr, str(n),))
                                 dbcon.commit()
                                 cursor.close()
                                 dbcon.close()
@@ -369,13 +400,13 @@ class WebSocketHandler(websocket.WebSocketHandler):
                                                                 db=daba)
                                 cursor = dbcon.cursor()
                                 sql_update_query_non_trivial = (
-                                """UPDATE query_non_trivial SET upep_kaks = "%i" WHERE (unique_id = "%s" and target_hitdef = "%s");""")
-                                cursor.execute(sql_update_query_non_trivial % (n, unique_file_id, hitdef))
+                                """UPDATE query_non_trivial SET upep_kaks = %s WHERE (unique_id = """+unique_file_id+""" and target_hitdef = """+hitdef+""");""")
+                                cursor.execute(sql_update_query_non_trivial, (str(n),))
                                 dbcon.commit()
                                 sql_insert_query_uPEP_KaKs = (
-                                    """INSERT INTO query_uPEP_KaKs (time_id, unique_id, hitdef, KaKs, upep_kaks_trigger) VALUES (current_timestamp, "%s", "%s", "%s", "%i");""")
+                                    """INSERT INTO query_uPEP_KaKs (time_id, unique_id, hitdef, KaKs, upep_kaks_trigger) VALUES (current_timestamp, %s, %s, %s, %s);""")
 
-                                cursor.execute(sql_insert_query_uPEP_KaKs % (unique_file_id, hitdef, kkr, n))
+                                cursor.execute(sql_insert_query_uPEP_KaKs, (unique_file_id, hitdef, kkr, str(n),))
                                 dbcon.commit()
                                 cursor.close()
                                 dbcon.close()
@@ -387,19 +418,20 @@ class WebSocketHandler(websocket.WebSocketHandler):
                                                             db=daba)
                             cursor = dbcon.cursor()
                             sql_update_query_non_trivial = (
-                            """UPDATE query_non_trivial SET upep_kaks = "%i" WHERE (unique_id = "%s" and target_hitdef = "%s");""")
+                            """UPDATE query_non_trivial SET upep_kaks = %s WHERE (unique_id = """+unique_file_id+""" and target_hitdef = """+hitdef+""");""")
                             cursor.execute(sql_update_query_non_trivial % (n, unique_file_id, hitdef))
                             dbcon.commit()
                             sql_insert_query_uPEP_KaKs = (
-                                """INSERT INTO query_uPEP_KaKs (time_id, unique_id, hitdef, KaKs, upep_kaks_trigger) VALUES (current_timestamp, "%s", "%s", "%s", "%i");""")
+                                """INSERT INTO query_uPEP_KaKs (time_id, unique_id, hitdef, KaKs, upep_kaks_trigger) VALUES (current_timestamp, %s, %s, %s, %s);""")
 
-                            cursor.execute(sql_insert_query_uPEP_KaKs % (unique_file_id, hitdef, kkr, n))
+                            cursor.execute(sql_insert_query_uPEP_KaKs, (unique_file_id, hitdef, kkr, str(n),))
                             dbcon.commit()
                             cursor.close()
                             dbcon.close()
+                        # If CDS option was checked.
                         if CDSfeature:
                             self.write_message("- Find CDSfeature.")
-
+                            # If both sequences had the same length, create temp file for kaksCDS calculation
                             if len(CDSpair[0]) == len(CDSpair[1]):
                                 yn00file = open(tempfilename + "yn00", "wt")
                                 try:
@@ -407,11 +439,15 @@ class WebSocketHandler(websocket.WebSocketHandler):
                                     yn00file.write("query\r\n" + CDSpair[0] + "\r\n" + "ref\r\n" + CDSpair[1] + "\r\n")
                                 finally:
                                     yn00file.close()
+                                # Call on yn00 to perform the calculation
                                 retcode = subprocess.call(
                                     [apps_loc+ "/yn00", tempfilename + "yn00", tempfilename + "yn00" + "CDS"])
+                                # Remove temp file
                                 os.remove(tempfilename + "yn00")
+                                
+                                # Parse out result file
                                 try:
-                                    kaksfile = open(tempfilename + "yn00" + "CDS")
+                                    kaksfile = open(tempfilename + "yn00" + "CDS", "rt")
                                     for i in range(0, 6):
                                         line = kaksfile.readline().rstrip()
                                     temp = line.split(" ", 1)
@@ -419,8 +455,10 @@ class WebSocketHandler(websocket.WebSocketHandler):
                                     kaksCDS += temp[1][1:-1].split(" ")
                                 finally:
                                     kaksfile.close()
+                                # Remove result file
                                 os.remove(tempfilename + "yn00" + "CDS")
                                 KaKs_success = True
+                                
                                 try:
                                     Ka = abs(float(kaksCDS[1]))
                                     Ks = abs(float(kaksCDS[2]))
@@ -434,12 +472,12 @@ class WebSocketHandler(websocket.WebSocketHandler):
                                                                     db=daba)
                                     cursor = dbcon.cursor()
                                     sql_update_query_non_trivial = (
-                                    """UPDATE query_non_trivial SET cds_kaks = "%i" WHERE (unique_id = "%s" and target_hitdef = "%s");""")
-                                    cursor.execute(sql_update_query_non_trivial % (n, unique_file_id, hitdef))
+                                    """UPDATE query_non_trivial SET cds_kaks = %s WHERE (unique_id = """+unique_file_id+""" and target_hitdef = """+hitdef+""");""")
+                                    cursor.execute(sql_update_query_non_trivial, (str(n),))
                                     dbcon.commit()
                                     sql_insert_query_CDS_KaKs = (
-                                        """INSERT INTO query_CDS_KaKs (time_id, unique_id, hitdef, KaKs, cds_kaks_trigger) VALUES (current_timestamp, "%s", "%s", "%s", "%i");""")
-                                    cursor.execute(sql_insert_query_CDS_KaKs % (unique_file_id, hitdef, kkr, n))
+                                        """INSERT INTO query_CDS_KaKs (time_id, unique_id, hitdef, KaKs, cds_kaks_trigger) VALUES (current_timestamp, %s, %s, %s, %s);""")
+                                    cursor.execute(sql_insert_query_CDS_KaKs, (unique_file_id, hitdef, kkr, str(n),))
                                     dbcon.commit()
                                     cursor.close()
                                     dbcon.close()
@@ -452,12 +490,12 @@ class WebSocketHandler(websocket.WebSocketHandler):
                                                                     db=daba)
                                     cursor = dbcon.cursor()
                                     sql_update_query_non_trivial = (
-                                    """UPDATE query_non_trivial SET cds_kaks = "%i" WHERE (unique_id = "%s" and target_hitdef = "%s");""")
-                                    cursor.execute(sql_update_query_non_trivial % (n, unique_file_id, hitdef))
+                                    """UPDATE query_non_trivial SET cds_kaks = %s WHERE (unique_id = """+unique_file_id+""" and target_hitdef = """+hitdef+""");""")
+                                    cursor.execute(sql_update_query_non_trivial, (str(n),))
                                     dbcon.commit()
                                     sql_insert_query_CDS_KaKs = (
-                                        """INSERT INTO query_CDS_KaKs (time_id, unique_id, hitdef, KaKs, cds_kaks_trigger) VALUES (current_timestamp, "%s", "%s", "%s", "%i");""")
-                                    cursor.execute(sql_insert_query_CDS_KaKs % (unique_file_id, hitdef, kkr, n))
+                                        """INSERT INTO query_CDS_KaKs (time_id, unique_id, hitdef, KaKs, cds_kaks_trigger) VALUES (current_timestamp, %s, %s, %s, %s);""")
+                                    cursor.execute(sql_insert_query_CDS_KaKs, (unique_file_id, hitdef, kkr, str(n),))
                                     dbcon.commit()
                                     cursor.close()
                                     dbcon.close()
@@ -470,12 +508,12 @@ class WebSocketHandler(websocket.WebSocketHandler):
                                                                     db=daba)
                                     cursor = dbcon.cursor()
                                     sql_update_query_non_trivial = (
-                                    """UPDATE query_non_trivial SET cds_kaks = "%i" WHERE (unique_id = "%s" and target_hitdef = "%s");""")
-                                    cursor.execute(sql_update_query_non_trivial % (n, unique_file_id, hitdef))
+                                    """UPDATE query_non_trivial SET cds_kaks = %s WHERE (unique_id = """+unique_file_id+""" and target_hitdef = """+hitdef+""");""")
+                                    cursor.execute(sql_update_query_non_trivial, (str(n),))
                                     dbcon.commit()
                                     sql_insert_query_CDS_KaKs = (
-                                        """INSERT INTO query_CDS_KaKs (time_id, unique_id, hitdef, KaKs, cds_kaks_trigger) VALUES (current_timestamp, "%s", "%s", "%s", "%i");""")
-                                    cursor.execute(sql_insert_query_CDS_KaKs % (unique_file_id, hitdef, kkr, n))
+                                        """INSERT INTO query_CDS_KaKs (time_id, unique_id, hitdef, KaKs, cds_kaks_trigger) VALUES (current_timestamp, %s, %s, %s, %s);""")
+                                    cursor.execute(sql_insert_query_CDS_KaKs, (unique_file_id, hitdef, kkr, str(n),))
                                     dbcon.commit()
                                     cursor.close()
                                     dbcon.close()
@@ -488,12 +526,12 @@ class WebSocketHandler(websocket.WebSocketHandler):
                                                                 db=daba)
                                 cursor = dbcon.cursor()
                                 sql_update_query_non_trivial = (
-                                """UPDATE query_non_trivial SET cds_kaks = "%i" WHERE (unique_id = "%s" and target_hitdef = "%s");""")
-                                cursor.execute(sql_update_query_non_trivial % (n, unique_file_id, hitdef))
+                                """UPDATE query_non_trivial SET cds_kaks = %s WHERE (unique_id = """+unique_file_id+""" and target_hitdef = """+hitdef+""");""")
+                                cursor.execute(sql_update_query_non_trivial, (str(n),))
                                 dbcon.commit()
                                 sql_insert_query_CDS_KaKs = (
-                                    """INSERT INTO query_CDS_KaKs (time_id, unique_id, hitdef, KaKs, cds_kaks_trigger) VALUES (current_timestamp, "%s", "%s", "%s", "%i");""")
-                                cursor.execute(sql_insert_query_CDS_KaKs % (unique_file_id, hitdef, kkr, n))
+                                    """INSERT INTO query_CDS_KaKs (time_id, unique_id, hitdef, KaKs, cds_kaks_trigger) VALUES (current_timestamp, %s, %s, %s, %s);""")
+                                cursor.execute(sql_insert_query_CDS_KaKs, (unique_file_id, hitdef, kkr, str(n),))
                                 dbcon.commit()
                                 cursor.close()
                                 dbcon.close()
@@ -505,18 +543,20 @@ class WebSocketHandler(websocket.WebSocketHandler):
                                                             db=daba)
                             cursor = dbcon.cursor()
                             sql_update_query_non_trivial = (
-                            """UPDATE query_non_trivial SET cds_kaks = "%i" WHERE (unique_id = "%s" and target_hitdef = "%s");""")
-                            cursor.execute(sql_update_query_non_trivial % (n, unique_file_id, hitdef))
+                            """UPDATE query_non_trivial SET cds_kaks = %s WHERE (unique_id = """+unique_file_id+""" and target_hitdef = """+hitdef+""");""")
+                            cursor.execute(sql_update_query_non_trivial, (str(n),))
                             dbcon.commit()
                             sql_insert_query_CDS_KaKs = (
-                                """INSERT INTO query_CDS_KaKs (time_id, unique_id, hitdef, KaKs, cds_kaks_trigger) VALUES (current_timestamp, "%s", "%s", "%s", "%i");""")
-                            cursor.execute(sql_insert_query_CDS_KaKs % (unique_file_id, hitdef, kkr, n))
+                                """INSERT INTO query_CDS_KaKs (time_id, unique_id, hitdef, KaKs, cds_kaks_trigger) VALUES (current_timestamp, %s, %s, %s, %s);""")
+                            cursor.execute(sql_insert_query_CDS_KaKs, (unique_file_id, hitdef, kkr, str(n),))
                             dbcon.commit()
                             cursor.close()
                             dbcon.close()
+                    # Setting up arrays for CDS features
                     features = []
                     reffeatures = []
                     reffeatures.append(details[1] + ["CDS"])
+                    # Adding uPEP and CDS feature to the array if available
                     for j in details[2]:
                         reffeatures.append(j + ["uPEP"])
                     if CDSfeature:
@@ -525,6 +565,7 @@ class WebSocketHandler(websocket.WebSocketHandler):
                     ##if True: #i[3][0] == 1:
                     ##    retcode = subprocess.call(["./yn00", "ptp4a1upep.nuc", "ptpuPEP"])
                     self.write_message("- Alignment using LAGAN.")
+                    # Write sequence information into temp files for alignment
                     alignfile1 = open(tempfilename + hitdef+"_1", "wt")
                     alignfile2 = open(tempfilename + hitdef+"_2", "wt")
                     try:
@@ -534,6 +575,7 @@ class WebSocketHandler(websocket.WebSocketHandler):
                         alignfile1.close()
                         alignfile2.close()
                     os.environ["LAGAN_DIR"] = lagan_loc
+                    # Aligning the two sequence with LAGAN.
                     retcode = subprocess.call(
                         ["perl", lagan_loc+ "/lagan.pl", tempfilename + hitdef+"_1", tempfilename + hitdef+"_2", "-out",
                          tempfilename + hitdef+".mfa", "-mfa"])
@@ -541,41 +583,48 @@ class WebSocketHandler(websocket.WebSocketHandler):
                         ["perl", lagan_loc+ "/mf_to_align.pl", "-f", tempfilename + hitdef+".mfa", "-out",
                          tempfilename + hitdef+"aligneduf"])
                     window = window_t
+                    # File name for heatmap
                     windowfilename = tempfilename + hitdef+"w"+window
+                    # draw heatmap and format alignment file
                     with open(tempfilename + hitdef+"aligneduf", "rt") as aligneduffile, open(tempfilename + hitdef+"aligned", "wt") as alignedfile: 
+                        # Get query sequence
                         query = "".join(aligneduffile.readline().rstrip("\r\n"))
+                        # Get match information
                         match = "".join(aligneduffile.readline().rstrip("\r\n"))
+                        # Get reference sequence
                         ref = "".join(aligneduffile.readline().rstrip("\r\n"))
+                        # Format the strings into items of equal length in array
                         query2 = conserveduPEP.split_sequence(query)
                         match2 = conserveduPEP.split_sequence(match)
                         ref2 = conserveduPEP.split_sequence(ref)
+                        # Write out formatted information
                         for i1, i2, i3 in zip(query2, match2, ref2):
                             alignedfile.write("%s\n%s\n%s\n\n" % (i1, i2, i3))
                         
-                        
+                        # Set flag for heatmap in query info
                         dbcon = MySQLdb.connect(user=dbuser, passwd=dbpass, host=dbhost, db=daba)
                         cursor = dbcon.cursor()
-                        sql_update_query_info = """UPDATE query_info SET window = "%i" WHERE unique_id = "%s";"""
-                        cursor.execute(sql_update_query_info % (int(window), unique_file_id))
+                        sql_update_query_info = """UPDATE query_info SET window = %s WHERE unique_id = """+unique_file_id+""";"""
+                        cursor.execute(sql_update_query_info, (window,))
                         dbcon.commit()
                         cursor.close()
                         dbcon.close()
                         
-                        
+                        # Create heatmap
                         conserveduPEP.makeheatmap(windowfilename + ".ppm", conserveduPEP.homologyvector(query, match, int(window)), features, grad, heatmapsize, 25)
                         if refhm == 1:
                             conserveduPEP.makeheatmap(windowfilename + "r.ppm", conserveduPEP.homologyvector(ref, match, int(window)), reffeatures, grad, heatmapsize, 25)
                         
                     
                     self.write_message("- Draw Heatmap.")
-                        
+                    # Convert .ppm file to png for display in web browser.    
                     if refhm == 1:
                         retcode = subprocess.call([apps_loc+ "/png.py", "-c", "9", windowfilename + "r.ppm"])
                         os.remove(windowfilename + "r.ppm")
                     
                     retcode = subprocess.call([apps_loc+ "/png.py", "-c", "9", windowfilename + ".ppm"])
                     os.remove(windowfilename + ".ppm")
-
+                    # Set flag for reference heatmap in query info
                     if refhm == 1:
                         dbcon = MySQLdb.connect(user=dbuser, passwd=dbpass, host=dbhost, db=daba)
                         cursor = dbcon.cursor()
@@ -588,27 +637,33 @@ class WebSocketHandler(websocket.WebSocketHandler):
 
             else:
                 errorstuff = "align error"
-
+                self.write_message("Alignment error.")
 
 class MainHandler(tornado.web.RequestHandler):
+    # Index page
     def get(self):
         self.render("index.html", title="Home Page",)
 class uPEPHelperForm(tornado.web.RequestHandler):
+    # uPEPHelper page
     def get(self):
         self.render("uhform.html", title="uPEP Database Updater", codons=helpersetting.STARTING_CODONS, databases=helpersetting.REFSEQ_DBS,)
 
 class uPEPHelperProcess(tornado.web.RequestHandler):
+    # uPEPHelper processing page
     @gen.coroutine
     def post(self):
+        # Get database information from query
         bdatabase = self.request.body_arguments["database"][0]
         database = bdatabase.decode("utf-8")
         #databases = helpersetting.REFSEQ_DBS     
         codons = helpersetting.STARTING_CODONS
         input_codons = []
+        # Get codons information from query
         for codon in codons:
             if codon in self.request.body_arguments:
                input_codons.append(codon)
         override = ""
+        # Get override information from query
         if self.request.body_arguments["override"]:
             override = "True"
         #pool = ThreadPoolExecutor(max_workers=settingmain.MAX_WORKERS)
@@ -616,20 +671,27 @@ class uPEPHelperProcess(tornado.web.RequestHandler):
         print(database)
         print(input_codons)
         print(override)
+        # Set up rq
         q = Queue("upephelper", connection=Redis())
+        # Begin the task in rq which would automatically timeout after 343600 seconds.
         result = q.enqueue(helpertasks.upephelper_processing, args=(database, input_codons, override,), timeout=343600)
         print(result.id)
         self.render("results_helper.html", title="uPEP Database Updater Result",)
                 
 
 class uPEPForm(tornado.web.RequestHandler):
+    # uPEP input page
     def get(self):
         self.render("upep.html", title="uPEPperoni - An Online Tool for uPEP Location and Analysis", codons=upepsetting.STARTING_CODONS, databases=upepsetting.DBWEB,)
 
 class uPEPProcess(tornado.web.RequestHandler):
+    # uPEP query processing page
     def post(self):
+        # Set up dictionary to store the information.
         parameters = {}
+        # Get current time
         parameters["timeid"] = time.time()
+        # Create unique id for query using current time and random number generator
         parameters["unid"] = "%012x%016x" % (int(parameters["timeid"] * 1000), random.randint(0, 0xFFFFFFFFFFFFFFFF))
         bdb = self.request.body_arguments["database"][0]
         parameters["db"] = bdb.decode("utf-8")
@@ -674,6 +736,7 @@ class uPEPProcess(tornado.web.RequestHandler):
             bgrace = self.request.body_arguments["grace"][0]
             parameters["grace"] = bgrace.decode("utf-8")
         gradi = []
+        # Caculate percentage values for each of the entered value for the color gradient
         gradnames = ["black", "blue", "green", "yellow", "red"]
         for i in range(0, 5):
             if "g" + gradnames[i] in self.request.body_arguments:
@@ -701,13 +764,16 @@ class uPEPProcess(tornado.web.RequestHandler):
             daba = upepsetting.DATABASES["default"]["DB"]
             bseqquery = self.request.body_arguments["seqquery"][0]
             seqquery = bseqquery.decode("utf-8")
+            # Remove any invalid character from user's input
             parameters["seqquery"] = seqquery.upper().replace("\n", "").replace("\r", "").replace(" ", "")
+            # If the length of the sequence met that of a unique id, check if the sequence is a uniqe id within the database.
             if len(parameters["seqquery"]) == 28:
                 dbcon = MySQLdb.connect(user=dbuser, passwd=dbpass, host=dbhost, db=daba)
                 cursor = dbcon.cursor()
-                sql_retrieve_query = """select * from query_info where unique_id = "%s";"""
-                cursor.execute(sql_retrieve_query % parameters["seqquery"])
-
+                sql_retrieve_query = """select * from query_info where unique_id = """+parameters["seqquery"]+""";"""
+                cursor.execute(sql_retrieve_query)
+                
+                # if not found, process the query normally
                 if not cursor.rowcount:
                     cursor.close()
                     dbcon.close()
@@ -716,20 +782,24 @@ class uPEPProcess(tornado.web.RequestHandler):
                     dbcon.close()
                     parameters['task'] = 1
                     self.render("upep_process.html", title="uPEP Process", parameters=json.dumps(parameters), filter_org = parameters['filter'], unid = parameters['unid'], strict = str(parameters['strict']),)        
+                # if found pull info from database instead.
                 else:
                     result = cursor.fetchone()
                     cursor.close()
                     dbcon.close()
                     parameters['task'] = 0
                     self.render("upep_process.html", title="uPEP Process", task=0, parameters=json.dumps(parameters), filter_org = parameters['filter'], unid = result[1], strict = str(parameters['strict']),)
+            # If the length of the sequence was not that of a unique id, start the query as normal.
             else:
                 parameters['task'] = 1
                 self.render("upep_process.html", title="uPEP Process", task=1, parameters=json.dumps(parameters), filter_org = parameters['filter'], unid = parameters['unid'], strict = str(parameters['strict']),)
                     
 class GetResult(tornado.web.RequestHandler):
+    # Displaying result
     def get(self, job_key, filter_org, strict):
+        # Get information from web url, including, unique id, filter organism and strict condition.
         self.weboutput(job_key, filter_org, int(strict))
-        
+    # Function which utilize the 3 infomation above to pull out query info from the database.    
     def weboutput(self, unique_file_id, filter_org, strict):
         
         dbuser = upepsetting.DATABASES['default']['USER']
@@ -738,7 +808,7 @@ class GetResult(tornado.web.RequestHandler):
         daba = upepsetting.DATABASES['default']['DB']
         dbcon = MySQLdb.connect(user=dbuser, passwd=dbpass, host=dbhost, db=daba)
         cursor = dbcon.cursor()
-
+        # Get information about the query from the database.
         seqq, dbn, prn, dbv, tfn, ini_flag, trv_flag, bm_flag, hm_flag, cdsk_flag, \
         upepk_flag, win_r, rhm, saa = conserveduPEP.parsing_initial(unique_file_id)
         
