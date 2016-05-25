@@ -1,15 +1,4 @@
-#!/usr/bin/env python3
-"""
-fabfile for doing uPEP things
-
-Mitchell Stanton-Cook
-m.stantoncook@gmail.com
-
-TODO: No real verification of the successful completion of step
-(i.e. verify all files downloaded, verify compaction, compilation, uPEPFinding
-& BLAST DB creation). 
-
-"""
+#!/usr/bin/env python27
 import os
 import sys
 import gzip

@@ -140,18 +140,18 @@ class WebSocketHandler(websocket.WebSocketHandler):
                     dbcon = MySQLdb.connect(user=dbuser, passwd=dbpass, host=dbhost, db=daba)
                     cursor = dbcon.cursor()
                     
-                    sql_update_query_info = """UPDATE query_info SET seqquery = %s, database_name = %s, db_version = %s, protein_name = %s, initial_flag = 2 WHERE unique_id = """+unique_file_id+""";"""
+                    sql_update_query_info = """UPDATE query_info SET seqquery = %s, database_name = %s, db_version = %s, protein_name = %s, initial_flag = 2 WHERE unique_id = %s"""
                     
                     # Add 
-                    cursor.execute(sql_update_query_info, (seqquery, database_n, db_version, details[3],))
+                    cursor.execute(sql_update_query_info, (seqquery, database_n, db_version, details[3], unique_file_id,))
                     dbcon.commit()
                     cursor.close()
                     dbcon.close()
                 else:
                     dbcon = MySQLdb.connect(user=dbuser, passwd=dbpass, host=dbhost, db=daba)
                     cursor = dbcon.cursor()
-                    sql_update_query_info = """UPDATE query_info SET seqquery = %s, database_name = %s, db_version = %s, initial_flag = 1 WHERE unique_id = """+unique_file_id+""";"""
-                    cursor.execute(sql_update_query_info, (seqquery, database_n, db_version,))
+                    sql_update_query_info = """UPDATE query_info SET seqquery = %s, database_name = %s, db_version = %s, initial_flag = 1 WHERE unique_id = %s"""
+                    cursor.execute(sql_update_query_info, (seqquery, database_n, db_version, unique_file_id,))
                     dbcon.commit()
                     cursor.close()
                     dbcon.close()
@@ -162,8 +162,8 @@ class WebSocketHandler(websocket.WebSocketHandler):
                 queryname = "Query"
                 dbcon = MySQLdb.connect(user=dbuser, passwd=dbpass, host=dbhost, db=daba)
                 cursor = dbcon.cursor()
-                sql_update_query_info = """UPDATE query_info SET seqquery = %s, database_name = %s, db_version = %s, initial_flag = 3 WHERE unique_id = """+unique_file_id+""";"""
-                cursor.execute(sql_update_query_info, ('Query',database_n, db_version,))
+                sql_update_query_info = """UPDATE query_info SET seqquery = %s, database_name = %s, db_version = %s, initial_flag = 3 WHERE unique_id = %s"""
+                cursor.execute(sql_update_query_info, ('Query',database_n, db_version, unique_file_id,))
                 dbcon.commit()
                 cursor.close()
                 dbcon.close()
@@ -178,8 +178,8 @@ class WebSocketHandler(websocket.WebSocketHandler):
                 if heatms == '':
                     dbcon = MySQLdb.connect(user=dbuser, passwd=dbpass, host=dbhost, db=daba)
                     cursor = dbcon.cursor()
-                    sql_update_query_info = """UPDATE query_info SET heatmap_flag = 1 WHERE unique_id = """+unique_file_id+""";"""
-                    cursor.execute(sql_update_query_info)
+                    sql_update_query_info = """UPDATE query_info SET heatmap_flag = 1 WHERE unique_id = %s"""
+                    cursor.execute(sql_update_query_info,(unique_file_id,))
                     dbcon.commit()
                     cursor.close()
                     dbcon.close()
@@ -190,8 +190,8 @@ class WebSocketHandler(websocket.WebSocketHandler):
                 if (heatmapsize < 400) or (heatmapsize > 10000):
                     dbcon = MySQLdb.connect(user=dbuser, passwd=dbpass, host=dbhost, db=daba)
                     cursor = dbcon.cursor()
-                    sql_update_query_info = """UPDATE query_info SET heatmap_flag = 2 WHERE unique_id = """+unique_file_id+""";"""
-                    cursor.execute(sql_update_query_info)
+                    sql_update_query_info = """UPDATE query_info SET heatmap_flag = 2 WHERE unique_id = %s"""
+                    cursor.execute(sql_update_query_info, (unique_file_id,))
                     dbcon.commit()
                     cursor.close()
                     dbcon.close()
@@ -205,8 +205,8 @@ class WebSocketHandler(websocket.WebSocketHandler):
                 if len(blastmatches) == 0:
                     dbcon = MySQLdb.connect(user=dbuser, passwd=dbpass, host=dbhost, db=daba)
                     cursor = dbcon.cursor()
-                    sql_update_query_info = """UPDATE query_info SET blastmacthes_flag = 1 WHERE unique_id = """+unique_file_id+""";"""
-                    cursor.execute(sql_update_query_info)
+                    sql_update_query_info = """UPDATE query_info SET blastmacthes_flag = 1 WHERE unique_id = %s"""
+                    cursor.execute(sql_update_query_info, (unique_file_id,))
                     dbcon.commit()
                     cursor.close()
                     dbcon.close()
@@ -217,12 +217,12 @@ class WebSocketHandler(websocket.WebSocketHandler):
                     # Only one match found
                     dbcon = MySQLdb.connect(user=dbuser, passwd=dbpass, host=dbhost, db=daba)
                     cursor = dbcon.cursor()
-                    sql_update_query_info = """UPDATE query_info SET blastmacthes_flag = 2 WHERE unique_id = """+unique_file_id+""";"""
+                    sql_update_query_info = """UPDATE query_info SET blastmacthes_flag = 2 WHERE unique_id = %s"""
 
-                    cursor.execute(sql_update_query_info)
+                    cursor.execute(sql_update_query_info, (unique_file_id,))
                     dbcon.commit()
-                    sql_insert_query_matchnumber = """INSERT INTO query_matchnumber (time_id, unique_id , match_number) VALUES (current_timestamp, %s, %i);"""
-                    cursor.execute(sql_insert_query_matchnumber, (unique_file_id, len(blastmatches),))
+                    sql_insert_query_matchnumber = """INSERT INTO query_matchnumber (time_id, unique_id , match_number) VALUES (current_timestamp, %s, %s)"""
+                    cursor.execute(sql_insert_query_matchnumber, (unique_file_id, str(len(blastmatches)),))
                     dbcon.commit()
                     cursor.close()
                     dbcon.close()
@@ -230,11 +230,11 @@ class WebSocketHandler(websocket.WebSocketHandler):
                     # More than 1 match found.
                     dbcon = MySQLdb.connect(user=dbuser, passwd=dbpass, host=dbhost, db=daba)
                     cursor = dbcon.cursor()
-                    sql_update_query_info = """UPDATE query_info SET blastmacthes_flag = 3 WHERE unique_id = """+unique_file_id+""";"""
-                    cursor.execute(sql_update_query_info)
+                    sql_update_query_info = """UPDATE query_info SET blastmacthes_flag = 3 WHERE unique_id = %s"""
+                    cursor.execute(sql_update_query_info, (unique_file_id,))
                     dbcon.commit()
-                    sql_insert_query_matchnumber = """INSERT INTO query_matchnumber (time_id, unique_id , match_number) VALUES (current_timestamp, %s, %i);"""
-                    cursor.execute(sql_insert_query_matchnumber, (unique_file_id, len(blastmatches),))
+                    sql_insert_query_matchnumber = """INSERT INTO query_matchnumber (time_id, unique_id , match_number) VALUES (current_timestamp, %s, %s)"""
+                    cursor.execute(sql_insert_query_matchnumber, (unique_file_id, str(len(blastmatches)),))
                     dbcon.commit()
                     cursor.close()
                     dbcon.close()
@@ -251,8 +251,8 @@ class WebSocketHandler(websocket.WebSocketHandler):
                         self.write_message("- Trivial hit.")
                         dbcon = MySQLdb.connect(user=dbuser, passwd=dbpass, host=dbhost, db=daba)
                         cursor = dbcon.cursor()
-                        sql_update_query_info = """UPDATE query_info SET trivial_flag = 1 WHERE unique_id = """+unique_file_id+""";"""
-                        cursor.execute(sql_update_query_info % (unique_file_id))
+                        sql_update_query_info = """UPDATE query_info SET trivial_flag = 1 WHERE unique_id = %s"""
+                        cursor.execute(sql_update_query_info, (unique_file_id,))
                         dbcon.commit()
                         sql_insert_query_trivial = """INSERT INTO query_trivial (time_id, unique_id, hitdef) VALUES (current_timestamp, %s, %s);"""
                         cursor.execute(sql_insert_query_trivial, (unique_file_id, hitdef,))
@@ -275,8 +275,8 @@ class WebSocketHandler(websocket.WebSocketHandler):
 
                     dbcon = MySQLdb.connect(user=dbuser, passwd=dbpass, host=dbhost, db=daba)
                     cursor = dbcon.cursor()
-                    sql_insert_query_non_trvial = """INSERT INTO query_non_trivial (time_id, unique_id, protein_name, input_sequence, target_organism, input_hitdef, input_starting_position, input_ending_position, alignment, target_sequence, target_hitdef, target_starting_position, target_ending_position, upep_kaks, cds_kaks) VALUES (current_timestamp, %s, %s, %s, %s, %s, %i, %i, %s, %s, %s, %s, %s, 0, 0);"""
-                    cursor.execute(sql_insert_query_non_trvial, (unique_file_id, details[3], blastmatch[5], details[4], queryname, str(blastmatch[2][0]), str(blastmatch[2][1]), blastmatch[7], blastmatch[6], hitdef, str(uPEPloc[0] + blastmatch[3][0] - 1), str(uPEPloc[0] + blastmatch[3][1] - 1),)
+                    sql_insert_query_non_trvial = """INSERT INTO query_non_trivial (time_id, unique_id, protein_name, input_sequence, target_organism, input_hitdef, input_starting_position, input_ending_position, alignment, target_sequence, target_hitdef, target_starting_position, target_ending_position, upep_kaks, cds_kaks) VALUES (current_timestamp, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 0, 0);"""
+                    cursor.execute(sql_insert_query_non_trvial, (unique_file_id, details[3], blastmatch[5], details[4], queryname, str(blastmatch[2][0]), str(blastmatch[2][1]), blastmatch[7], blastmatch[6], hitdef, str(uPEPloc[0] + blastmatch[3][0] - 1), str(uPEPloc[0] + blastmatch[3][1] - 1),))
 
                     dbcon.commit()
                     cursor.close()
@@ -288,8 +288,8 @@ class WebSocketHandler(websocket.WebSocketHandler):
                         self.write_message("- Calculating KaKs.")
                         dbcon = MySQLdb.connect(user=dbuser, passwd=dbpass, host=dbhost, db=daba)
                         cursor = dbcon.cursor()
-                        sql_update_query_info = """UPDATE query_info SET CDSKaKs_flag = 1, uPEPKaKs_flag = 1 WHERE unique_id = """+unique_file_id+""";"""
-                        cursor.execute(sql_update_query_info)
+                        sql_update_query_info = """UPDATE query_info SET CDSKaKs_flag = 1, uPEPKaKs_flag = 1 WHERE unique_id = %s"""
+                        cursor.execute(sql_update_query_info, (unique_file_id,))
                         dbcon.commit()
                         
                         cursor.close()
@@ -309,15 +309,7 @@ class WebSocketHandler(websocket.WebSocketHandler):
                             with open(tempfilename + "yn00", "wt") as yn00file:
                                 yn00file.write("  2  %i\r\n" % (len(uPEPpair[0])))
                                 yn00file.write("query\r\n" + uPEPpair[0] + "\r\n" + "ref\r\n" + uPEPpair[1] + "\r\n")
-                            #yn00file = open(tempfilename + "yn00", "wt")
-
-                            #try:
-                                #yn00file.write("  2  %i\r\n" % (len(uPEPpair[0])))
-                                #yn00file.write("query\r\n" + uPEPpair[0] + "\r\n" + "ref\r\n" + uPEPpair[1] + "\r\n")
-                            #finally:
-                                #yn00file.close()
-                              
-                            #retcode = subprocess.check_call([apps_loc+ "/yn00", tempfilename+ "yn00", tempfilename + "yn00" + "uPEP"])
+                            
                             # Call on yn00 to process the file
                             retcode = subprocess.call([apps_loc+ "/yn00", tempfilename+ "yn00", tempfilename + "yn00" + "uPEP"], stdout=sys.stderr, stderr=sys.stderr)
                             
@@ -361,12 +353,10 @@ class WebSocketHandler(websocket.WebSocketHandler):
                                 dbcon = MySQLdb.connect(user=dbuser, passwd=dbpass, host=dbhost,
                                                                 db=daba)
                                 cursor = dbcon.cursor()
-                                sql_update_query_non_trivial = (
-                                """UPDATE query_non_trivial SET upep_kaks = %s WHERE (unique_id = """+unique_file_id+""" and target_hitdef = """+hitdef+""");""")
-                                cursor.execute(sql_update_query_non_trivial, (str(n),))
+                                sql_update_query_non_trivial = """UPDATE query_non_trivial SET upep_kaks = %s WHERE (unique_id = %s and target_hitdef = %s)"""
+                                cursor.execute(sql_update_query_non_trivial, (str(n),unique_file_id,hitdef,))
                                 dbcon.commit()
-                                sql_insert_query_uPEP_KaKs = (
-                                    """INSERT INTO query_uPEP_KaKs (time_id, unique_id, hitdef, KaKs, upep_kaks_trigger) VALUES (current_timestamp, %s, %s, %s, %s);""")
+                                sql_insert_query_uPEP_KaKs = """INSERT INTO query_uPEP_KaKs (time_id, unique_id, hitdef, KaKs, upep_kaks_trigger) VALUES (current_timestamp, %s, %s, %s, %s)"""
 
                                 cursor.execute(sql_insert_query_uPEP_KaKs, (unique_file_id, hitdef, kkr, str(n),))
                                 dbcon.commit()
@@ -380,12 +370,10 @@ class WebSocketHandler(websocket.WebSocketHandler):
                                 dbcon = MySQLdb.connect(user=dbuser, passwd=dbpass, host=dbhost,
                                                                 db=daba)
                                 cursor = dbcon.cursor()
-                                sql_update_query_non_trivial = (
-                                """UPDATE query_non_trivial SET upep_kaks = %s WHERE (unique_id = """+unique_file_id+""" and target_hitdef = """+hitdef+""");""")
-                                cursor.execute(sql_update_query_non_trivial, (str(n),))
+                                sql_update_query_non_trivial = """UPDATE query_non_trivial SET upep_kaks = %s WHERE (unique_id = %s and target_hitdef = %s)"""
+                                cursor.execute(sql_update_query_non_trivial, (str(n),unique_file_id,hitdef,))
                                 dbcon.commit()
-                                sql_insert_query_uPEP_KaKs = (
-                                    """INSERT INTO query_uPEP_KaKs (time_id, unique_id, hitdef, KaKs, upep_kaks_trigger) VALUES (current_timestamp, %s, %s, %s, %s);""")
+                                sql_insert_query_uPEP_KaKs = """INSERT INTO query_uPEP_KaKs (time_id, unique_id, hitdef, KaKs, upep_kaks_trigger) VALUES (current_timestamp, %s, %s, %s, %s);"""
 
                                 cursor.execute(sql_insert_query_uPEP_KaKs, (unique_file_id, hitdef, kkr, str(n),))
                                 dbcon.commit()
@@ -399,12 +387,10 @@ class WebSocketHandler(websocket.WebSocketHandler):
                                 dbcon = MySQLdb.connect(user=dbuser, passwd=dbpass, host=dbhost,
                                                                 db=daba)
                                 cursor = dbcon.cursor()
-                                sql_update_query_non_trivial = (
-                                """UPDATE query_non_trivial SET upep_kaks = %s WHERE (unique_id = """+unique_file_id+""" and target_hitdef = """+hitdef+""");""")
-                                cursor.execute(sql_update_query_non_trivial, (str(n),))
+                                sql_update_query_non_trivial = """UPDATE query_non_trivial SET upep_kaks = %s WHERE (unique_id = %s and target_hitdef = %s);"""
+                                cursor.execute(sql_update_query_non_trivial, (str(n), unique_file_id, hitdef,))
                                 dbcon.commit()
-                                sql_insert_query_uPEP_KaKs = (
-                                    """INSERT INTO query_uPEP_KaKs (time_id, unique_id, hitdef, KaKs, upep_kaks_trigger) VALUES (current_timestamp, %s, %s, %s, %s);""")
+                                sql_insert_query_uPEP_KaKs = """INSERT INTO query_uPEP_KaKs (time_id, unique_id, hitdef, KaKs, upep_kaks_trigger) VALUES (current_timestamp, %s, %s, %s, %s);"""
 
                                 cursor.execute(sql_insert_query_uPEP_KaKs, (unique_file_id, hitdef, kkr, str(n),))
                                 dbcon.commit()
@@ -417,12 +403,10 @@ class WebSocketHandler(websocket.WebSocketHandler):
                             dbcon = MySQLdb.connect(user=dbuser, passwd=dbpass, host=dbhost,
                                                             db=daba)
                             cursor = dbcon.cursor()
-                            sql_update_query_non_trivial = (
-                            """UPDATE query_non_trivial SET upep_kaks = %s WHERE (unique_id = """+unique_file_id+""" and target_hitdef = """+hitdef+""");""")
-                            cursor.execute(sql_update_query_non_trivial % (n, unique_file_id, hitdef))
+                            sql_update_query_non_trivial = """UPDATE query_non_trivial SET upep_kaks = %s WHERE (unique_id = %s and target_hitdef = %s);"""
+                            cursor.execute(sql_update_query_non_trivial, (str(n), unique_file_id, hitdef,))
                             dbcon.commit()
-                            sql_insert_query_uPEP_KaKs = (
-                                """INSERT INTO query_uPEP_KaKs (time_id, unique_id, hitdef, KaKs, upep_kaks_trigger) VALUES (current_timestamp, %s, %s, %s, %s);""")
+                            sql_insert_query_uPEP_KaKs = """INSERT INTO query_uPEP_KaKs (time_id, unique_id, hitdef, KaKs, upep_kaks_trigger) VALUES (current_timestamp, %s, %s, %s, %s);"""
 
                             cursor.execute(sql_insert_query_uPEP_KaKs, (unique_file_id, hitdef, kkr, str(n),))
                             dbcon.commit()
@@ -471,12 +455,10 @@ class WebSocketHandler(websocket.WebSocketHandler):
                                     dbcon = MySQLdb.connect(user=dbuser, passwd=dbpass, host=dbhost,
                                                                     db=daba)
                                     cursor = dbcon.cursor()
-                                    sql_update_query_non_trivial = (
-                                    """UPDATE query_non_trivial SET cds_kaks = %s WHERE (unique_id = """+unique_file_id+""" and target_hitdef = """+hitdef+""");""")
-                                    cursor.execute(sql_update_query_non_trivial, (str(n),))
+                                    sql_update_query_non_trivial = """UPDATE query_non_trivial SET cds_kaks = %s WHERE (unique_id = %s and target_hitdef = %s)"""
+                                    cursor.execute(sql_update_query_non_trivial, (str(n), unique_file_id, hitdef,))
                                     dbcon.commit()
-                                    sql_insert_query_CDS_KaKs = (
-                                        """INSERT INTO query_CDS_KaKs (time_id, unique_id, hitdef, KaKs, cds_kaks_trigger) VALUES (current_timestamp, %s, %s, %s, %s);""")
+                                    sql_insert_query_CDS_KaKs = """INSERT INTO query_CDS_KaKs (time_id, unique_id, hitdef, KaKs, cds_kaks_trigger) VALUES (current_timestamp, %s, %s, %s, %s)"""
                                     cursor.execute(sql_insert_query_CDS_KaKs, (unique_file_id, hitdef, kkr, str(n),))
                                     dbcon.commit()
                                     cursor.close()
@@ -489,12 +471,10 @@ class WebSocketHandler(websocket.WebSocketHandler):
                                     dbcon = MySQLdb.connect(user=dbuser, passwd=dbpass, host=dbhost,
                                                                     db=daba)
                                     cursor = dbcon.cursor()
-                                    sql_update_query_non_trivial = (
-                                    """UPDATE query_non_trivial SET cds_kaks = %s WHERE (unique_id = """+unique_file_id+""" and target_hitdef = """+hitdef+""");""")
-                                    cursor.execute(sql_update_query_non_trivial, (str(n),))
+                                    sql_update_query_non_trivial = """UPDATE query_non_trivial SET cds_kaks = %s WHERE (unique_id = %s and target_hitdef = %s)"""
+                                    cursor.execute(sql_update_query_non_trivial, (str(n), unique_file_id, hitdef,))
                                     dbcon.commit()
-                                    sql_insert_query_CDS_KaKs = (
-                                        """INSERT INTO query_CDS_KaKs (time_id, unique_id, hitdef, KaKs, cds_kaks_trigger) VALUES (current_timestamp, %s, %s, %s, %s);""")
+                                    sql_insert_query_CDS_KaKs = """INSERT INTO query_CDS_KaKs (time_id, unique_id, hitdef, KaKs, cds_kaks_trigger) VALUES (current_timestamp, %s, %s, %s, %s)"""
                                     cursor.execute(sql_insert_query_CDS_KaKs, (unique_file_id, hitdef, kkr, str(n),))
                                     dbcon.commit()
                                     cursor.close()
@@ -507,12 +487,10 @@ class WebSocketHandler(websocket.WebSocketHandler):
                                     dbcon = MySQLdb.connect(user=dbuser, passwd=dbpass, host=dbhost,
                                                                     db=daba)
                                     cursor = dbcon.cursor()
-                                    sql_update_query_non_trivial = (
-                                    """UPDATE query_non_trivial SET cds_kaks = %s WHERE (unique_id = """+unique_file_id+""" and target_hitdef = """+hitdef+""");""")
-                                    cursor.execute(sql_update_query_non_trivial, (str(n),))
+                                    sql_update_query_non_trivial = """UPDATE query_non_trivial SET cds_kaks = %s WHERE (unique_id = %s and target_hitdef = %s)"""
+                                    cursor.execute(sql_update_query_non_trivial, (str(n), unique_file_id, hitdef,))
                                     dbcon.commit()
-                                    sql_insert_query_CDS_KaKs = (
-                                        """INSERT INTO query_CDS_KaKs (time_id, unique_id, hitdef, KaKs, cds_kaks_trigger) VALUES (current_timestamp, %s, %s, %s, %s);""")
+                                    sql_insert_query_CDS_KaKs = """INSERT INTO query_CDS_KaKs (time_id, unique_id, hitdef, KaKs, cds_kaks_trigger) VALUES (current_timestamp, %s, %s, %s, %s)"""
                                     cursor.execute(sql_insert_query_CDS_KaKs, (unique_file_id, hitdef, kkr, str(n),))
                                     dbcon.commit()
                                     cursor.close()
@@ -525,12 +503,10 @@ class WebSocketHandler(websocket.WebSocketHandler):
                                 dbcon = MySQLdb.connect(user=dbuser, passwd=dbpass, host=dbhost,
                                                                 db=daba)
                                 cursor = dbcon.cursor()
-                                sql_update_query_non_trivial = (
-                                """UPDATE query_non_trivial SET cds_kaks = %s WHERE (unique_id = """+unique_file_id+""" and target_hitdef = """+hitdef+""");""")
-                                cursor.execute(sql_update_query_non_trivial, (str(n),))
+                                sql_update_query_non_trivial = """UPDATE query_non_trivial SET cds_kaks = %s WHERE (unique_id = %s and target_hitdef = %s)"""
+                                cursor.execute(sql_update_query_non_trivial, (str(n), unique_file_id, hitdef,))
                                 dbcon.commit()
-                                sql_insert_query_CDS_KaKs = (
-                                    """INSERT INTO query_CDS_KaKs (time_id, unique_id, hitdef, KaKs, cds_kaks_trigger) VALUES (current_timestamp, %s, %s, %s, %s);""")
+                                sql_insert_query_CDS_KaKs = """INSERT INTO query_CDS_KaKs (time_id, unique_id, hitdef, KaKs, cds_kaks_trigger) VALUES (current_timestamp, %s, %s, %s, %s)"""
                                 cursor.execute(sql_insert_query_CDS_KaKs, (unique_file_id, hitdef, kkr, str(n),))
                                 dbcon.commit()
                                 cursor.close()
@@ -542,12 +518,10 @@ class WebSocketHandler(websocket.WebSocketHandler):
                             dbcon = MySQLdb.connect(user=dbuser, passwd=dbpass, host=dbhost,
                                                             db=daba)
                             cursor = dbcon.cursor()
-                            sql_update_query_non_trivial = (
-                            """UPDATE query_non_trivial SET cds_kaks = %s WHERE (unique_id = """+unique_file_id+""" and target_hitdef = """+hitdef+""");""")
-                            cursor.execute(sql_update_query_non_trivial, (str(n),))
+                            sql_update_query_non_trivial = """UPDATE query_non_trivial SET cds_kaks = %s WHERE (unique_id = %s and target_hitdef = %s)"""
+                            cursor.execute(sql_update_query_non_trivial, (str(n),unique_file_id,hitdef,))
                             dbcon.commit()
-                            sql_insert_query_CDS_KaKs = (
-                                """INSERT INTO query_CDS_KaKs (time_id, unique_id, hitdef, KaKs, cds_kaks_trigger) VALUES (current_timestamp, %s, %s, %s, %s);""")
+                            sql_insert_query_CDS_KaKs = """INSERT INTO query_CDS_KaKs (time_id, unique_id, hitdef, KaKs, cds_kaks_trigger) VALUES (current_timestamp, %s, %s, %s, %s)"""
                             cursor.execute(sql_insert_query_CDS_KaKs, (unique_file_id, hitdef, kkr, str(n),))
                             dbcon.commit()
                             cursor.close()
@@ -604,8 +578,8 @@ class WebSocketHandler(websocket.WebSocketHandler):
                         # Set flag for heatmap in query info
                         dbcon = MySQLdb.connect(user=dbuser, passwd=dbpass, host=dbhost, db=daba)
                         cursor = dbcon.cursor()
-                        sql_update_query_info = """UPDATE query_info SET window = %s WHERE unique_id = """+unique_file_id+""";"""
-                        cursor.execute(sql_update_query_info, (window,))
+                        sql_update_query_info = """UPDATE query_info SET window = %s WHERE unique_id = %s"""
+                        cursor.execute(sql_update_query_info, (window,unique_file_id,))
                         dbcon.commit()
                         cursor.close()
                         dbcon.close()
@@ -628,8 +602,8 @@ class WebSocketHandler(websocket.WebSocketHandler):
                     if refhm == 1:
                         dbcon = MySQLdb.connect(user=dbuser, passwd=dbpass, host=dbhost, db=daba)
                         cursor = dbcon.cursor()
-                        sql_update_query_info = """UPDATE query_info SET Refheatmap = 1 WHERE unique_id = "%s";"""
-                        cursor.execute(sql_update_query_info % (unique_file_id))
+                        sql_update_query_info = """UPDATE query_info SET Refheatmap = 1 WHERE unique_id = %s"""
+                        cursor.execute(sql_update_query_info, (unique_file_id,))
                         dbcon.commit()
                         cursor.close()
                         dbcon.close()
@@ -770,8 +744,8 @@ class uPEPProcess(tornado.web.RequestHandler):
             if len(parameters["seqquery"]) == 28:
                 dbcon = MySQLdb.connect(user=dbuser, passwd=dbpass, host=dbhost, db=daba)
                 cursor = dbcon.cursor()
-                sql_retrieve_query = """select * from query_info where unique_id = """+parameters["seqquery"]+""";"""
-                cursor.execute(sql_retrieve_query)
+                sql_retrieve_query = """select * from query_info where unique_id = %s"""
+                cursor.execute(sql_retrieve_query, (parameters["seqquery"],))
                 
                 # if not found, process the query normally
                 if not cursor.rowcount:
@@ -847,15 +821,15 @@ class GetResult(tornado.web.RequestHandler):
                 print('<br><b> 1 hit found in raw output.</b><br><br>')
             elif bm_flag == 3:
 
-                sql_bm_retrieve = """select * from query_matchnumber where unique_id = "%s";"""
-                cursor.execute(sql_bm_retrieve % unique_file_id)
+                sql_bm_retrieve = """select * from query_matchnumber where unique_id = %s"""
+                cursor.execute(sql_bm_retrieve, (unique_file_id,))
 
                 for (time_id, unique_id, match_number) in cursor:
                     mnumber = match_number
                     print('<br><b> %i hits found in raw output.</b><br><br>' % mnumber)
             if trv_flag == 1:
-                sql_trv_retrieve = """select * from query_trivial where unique_id = "%s";"""
-                cursor.execute(sql_trv_retrieve % unique_file_id)
+                sql_trv_retrieve = """select * from query_trivial where unique_id = %s"""
+                cursor.execute(sql_trv_retrieve, (unique_file_id,))
 
                 result = cursor.fetchall()
                 trivial_row = cursor.rowcount
@@ -886,15 +860,15 @@ class GetResult(tornado.web.RequestHandler):
                             row[3], seqq, row[6], row[7], row[8], row[9], row[10],
                             row[11], row[12]))
                         if upepk_flag == 1:
-                            sql_upepk_retrieve = """select * from query_uPEP_KaKs where (unique_id = "%s" and hitdef = "%s" and upep_kaks_trigger = "%i");"""
-                            cursor.execute(sql_upepk_retrieve % (unique_file_id, row[10], row[13]))
+                            sql_upepk_retrieve = """select * from query_uPEP_KaKs where (unique_id = %s and hitdef = %s and upep_kaks_trigger = %s)"""
+                            cursor.execute(sql_upepk_retrieve, (unique_file_id, row[10], str(row[13]),))
                             upepk_result = cursor.fetchall()
                             for i in upepk_result:
                                 upepkaks_dict[row[10]] = i[3]
                                 print('<span style="font-size:80%"><b>' + i[3] + '</b></span><br>')
                         if cdsk_flag == 1:
-                            sql_cdsk_retrieve = """select * from query_CDS_KaKs where (unique_id = "%s" and hitdef = "%s" and cds_kaks_trigger = "%i");"""
-                            cursor.execute(sql_cdsk_retrieve % (unique_file_id, row[10], row[14]))
+                            sql_cdsk_retrieve = """select * from query_CDS_KaKs where (unique_id = %s and hitdef = %s and cds_kaks_trigger = %s)"""
+                            cursor.execute(sql_cdsk_retrieve, (unique_file_id, row[10], str(row[14]),))
                             cdsk_result = cursor.fetchall()
                             for i in cdsk_result:
                                 upepcds_dict[row[10]] = i[3]
