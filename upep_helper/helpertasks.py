@@ -33,10 +33,10 @@ def upephelper_processing(key, codons, override):
     dbv = str(remote)
     helper.upep_mysql_database(unid, dbuser, dbpass, dbhost, daba, key, query, override_condition, remote)
     local_version = 0
-    lv = """select * from updater_log where refseq_database = "%s" and success_log = 1 order by unix_timestamp(time_id_start) desc;"""
+    lv = """select * from updater_log where refseq_database = %s and success_log = 1 order by unix_timestamp(time_id_start) desc;"""
     dbcon = MySQLdb.connect(user=dbuser, passwd=dbpass, host=dbhost, db=daba)
     cursor = dbcon.cursor()
-    cursor.execute(lv % key)
+    cursor.execute(lv, (key,))
     if not cursor.rowcount:
         local_version = 0
     else:
@@ -99,8 +99,8 @@ def upephelper_processing(key, codons, override):
         dbcon = MySQLdb.connect(user=dbuser, passwd=dbpass, host=dbhost, db=daba)
         cursor = dbcon.cursor()
     
-        update_log = ("""UPDATE updater_log SET time_id_finish = current_timestamp, success_log = %i WHERE unique_id = "%s";""")
-        cursor.execute(update_log % (1, unid))
+        update_log = """UPDATE updater_log SET time_id_finish = current_timestamp, success_log = 1 WHERE unique_id = %s"""
+        cursor.execute(update_log, (unid,))
         dbcon.commit()
         cursor.close()
         dbcon.close()

@@ -149,8 +149,8 @@ def upep_mysql_database(unid, dbuser, dbpass, dbhost, db, key, codonstring, over
     sql_tbc7 = ("create table if not exists updater_log (time_id_start TIMESTAMP NOT NULL, time_id_finish TIMESTAMP NOT NULL, unique_id VARCHAR(40) NOT NULL, refseq_database VARCHAR(20) NOT NULL, refseq_database_version INT NOT NULL, acc_db TINYINT NOT NULL, gi_db TINYINT NOT NULL, codons VARCHAR(100) NOT NULL, override_refseq_database VARCHAR(5) NOT NULL, success_log TINYINT NOT NULL);")
     cursor.execute(sql_tbc7)
     
-    update_log = ("""INSERT INTO updater_log (time_id_start, time_id_finish, unique_id, refseq_database, refseq_database_version, acc_db, gi_db, codons, override_refseq_database, success_log) VALUES (current_timestamp, current_timestamp, "%s", "%s", "%i", 1, 1, "%s", "%s", 0);""")
-    cursor.execute(update_log % (unid, key, dbv, codonstring, override))
+    update_log = ("""INSERT INTO updater_log (time_id_start, time_id_finish, unique_id, refseq_database, refseq_database_version, acc_db, gi_db, codons, override_refseq_database, success_log) VALUES (current_timestamp, current_timestamp, %s, %s, %s, 1, 1, %s, %s, 0)""")
+    cursor.execute(update_log, (unid, key, str(dbv), codonstring, override,))
     dbcon.commit()
     cursor.close()
     dbcon.close()
@@ -380,19 +380,19 @@ def compile_RefSeq(compacted_dir, db_version, fn, dbuser, dbpass, dbhost, db, ti
     #cursor.execute(sql_dbtarget)
     
     
-    sql_check1 = ("""drop table IF EXISTS %s;""")
+    sql_check1 = ("""drop table IF EXISTS """)
     
-    cursor.execute(sql_check1 % acc_table_name)
+    cursor.execute(sql_check1+acc_table_name)
     
-    cursor.execute(sql_check1 % gi_table_name)
+    cursor.execute(sql_check1+gi_table_name)
     
-    sql_tbc_ACC = ("""create table %s (accession VARCHAR(20) NOT NULL, organism VARCHAR(50) NOT NULL, position INT NOT NULL, filepath VARCHAR(1000) NOT NULL);""")
+    sql_tbc_ACC = ("""create table """+acc_table_name+""" (accession VARCHAR(20) NOT NULL, organism VARCHAR(50) NOT NULL, position INT NOT NULL, filepath VARCHAR(1000) NOT NULL)""")
     
-    cursor.execute(sql_tbc_ACC % acc_table_name)
+    cursor.execute(sql_tbc_ACC)
     
-    sql_tbc_GI = ("""create table %s (GI INT NOT NULL, accession VARCHAR(20) NOT NULL);""")
+    sql_tbc_GI = ("""create table """+gi_table_name+""" (GI INT NOT NULL, accession VARCHAR(20) NOT NULL)""")
 
-    cursor.execute(sql_tbc_GI % gi_table_name)
+    cursor.execute(sql_tbc_GI)
     
     n = 0
     k = 0
@@ -449,24 +449,26 @@ def compile_RefSeq(compacted_dir, db_version, fn, dbuser, dbpass, dbhost, db, ti
             # for i in GIlist:
                 # openfile.write('%s\t%s\n' % (i[0], i[1]))
             # openfile.close()
-            sql_insert_ACC = ("""INSERT INTO %s (accession, organism, position, filepath) VALUES ("%s", "%s", "%s", "%s");""")
+            sql_insert_ACC = ("""INSERT INTO """+acc_table_name+""" (accession, organism, position, filepath) VALUES (%s, %s, %s, %s)""")
             pbar1 = tqdm.tqdm(total=len(accessionlist), desc='Accession SQL Insert', leave=True)
             for i in accessionlist:
                 #print ("""Inserting Accession: %s, Organism: %s, Position: %s, Filepath: %s) VALUES (%s, %s, %s, %s);"""  % (i[0], i[1], i[2], i[3]))
-                cursor.execute(sql_insert_ACC % (acc_table_name, i[0], i[1], i[2], i[3]))
+                cursor.execute(sql_insert_ACC, (i[0], i[1], i[2], i[3],))
                 
                 dbcon.commit()
                 pbar1.update(1)
                 
-            sql_insert_GI = ("""INSERT INTO %s (GI, accession) VALUES ("%s", "%s");""")
+            sql_insert_GI = ("""INSERT INTO """+gi_table_name+""" (GI, accession) VALUES (%s, %s)""")
             pbar2 = tqdm.tqdm(total=len(GIlist), desc='GI SQL Insert', leave=True)
             for i in GIlist:
-                cursor.execute(sql_insert_GI % (gi_table_name, i[0], i[1]))
+                cursor.execute(sql_insert_GI, (i[0], i[1],))
                 dbcon.commit()
                 pbar2.update(1)
             #pbar.update(1)
             
              
+    cursor.execute("""create index """+acc_table_name+"""_key on """+acc_table_name)
+    cursor.execute("""create index """+gi_table_name+"""_key on """+gi_table_name)
     print("Working with %i elements" % (n))
     cursor.close()
     dbcon.close()
