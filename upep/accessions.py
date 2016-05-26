@@ -20,8 +20,8 @@ def ACCloc(accession, dbstuff):
 
     dbconnect = MySQLdb.connect(user=dbuser, passwd=dbpass, host=dbhost, db=daba)
     cursor = dbconnect.cursor()
-    sql_retrieve = """select * from %s where accession = "%s";"""
-    cursor.execute(sql_retrieve % (dbstuff+'_acc', accession))
+    sql_retrieve = """select * from """+dbstuff+"""_acc where accession = %s"""
+    cursor.execute(sql_retrieve, (accession,))
     for (accession, organism, position, filepath) in cursor:
         acc = accession
         org = organism
@@ -40,8 +40,8 @@ def GIloc(accession, dbstuff):
 
     dbconnect = MySQLdb.connect(user=dbuser, passwd=dbpass, host=dbhost, db=daba)
     cursor = dbconnect.cursor()
-    sql_retrieve = """select * from %s where GI = "%s";"""
-    cursor.execute(sql_retrieve % (dbstuff+'_gi', accession))
+    sql_retrieve = """select * from """+dbstuff+"""_gi where GI = %s"""
+    cursor.execute(sql_retrieve, (accession,))
     for (GI, accession) in cursor:
         GI = GI
         acc = accession

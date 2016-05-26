@@ -467,8 +467,8 @@ def compile_RefSeq(compacted_dir, db_version, fn, dbuser, dbpass, dbhost, db, ti
             #pbar.update(1)
             
              
-    cursor.execute("""create index """+acc_table_name+"""_key on """+acc_table_name)
-    cursor.execute("""create index """+gi_table_name+"""_key on """+gi_table_name)
+    cursor.execute("""create index """+acc_table_name+"""_key on """+acc_table_name+"""(accession)""")
+    cursor.execute("""create index """+gi_table_name+"""_key on """+gi_table_name+"""(GI)""")
     print("Working with %i elements" % (n))
     cursor.close()
     dbcon.close()
