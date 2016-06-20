@@ -146,10 +146,10 @@ def upep_mysql_database(unid, dbuser, dbpass, dbhost, db, key, codonstring, over
        
     cursor.execute(sql_tbc6)
     
-    sql_tbc7 = ("create table if not exists updater_log (time_id_start TIMESTAMP NOT NULL, time_id_finish TIMESTAMP NOT NULL, unique_id VARCHAR(40) NOT NULL, refseq_database VARCHAR(20) NOT NULL, refseq_database_version INT NOT NULL, acc_db TINYINT NOT NULL, gi_db TINYINT NOT NULL, codons VARCHAR(100) NOT NULL, override_refseq_database VARCHAR(5) NOT NULL, success_log TINYINT NOT NULL);")
+    sql_tbc7 = ("create table if not exists updater_log (time_id_start TIMESTAMP DEFAULT CURRENT_TIMESTAMP, time_id_finish TIMESTAMP DEFAULT CURRENT_TIMESTAMP, unique_id VARCHAR(40) NOT NULL, refseq_database VARCHAR(20) NOT NULL, refseq_database_version INT NOT NULL, acc_db TINYINT NOT NULL, gi_db TINYINT NOT NULL, codons VARCHAR(100) NOT NULL, override_refseq_database VARCHAR(5) NOT NULL, success_log TINYINT NOT NULL);")
     cursor.execute(sql_tbc7)
     
-    update_log = ("""INSERT INTO updater_log (time_id_start, time_id_finish, unique_id, refseq_database, refseq_database_version, acc_db, gi_db, codons, override_refseq_database, success_log) VALUES (current_timestamp, current_timestamp, %s, %s, %s, 1, 1, %s, %s, 0)""")
+    update_log = ("""INSERT INTO updater_log (unique_id, refseq_database, refseq_database_version, acc_db, gi_db, codons, override_refseq_database, success_log) VALUES (%s, %s, %s, 1, 1, %s, %s, 0)""")
     cursor.execute(update_log, (unid, key, str(dbv), codonstring, override,))
     dbcon.commit()
     cursor.close()
