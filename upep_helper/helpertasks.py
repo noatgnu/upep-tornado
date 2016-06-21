@@ -84,17 +84,17 @@ def upephelper_processing(key, codons, override):
                 #os.chdir(home)
 
         os.chdir(outpath)
-        try:
-            os.mkdir("../tmp/RefSeqdb"+dbv)
-        except OSError:
-            print("RefSeqdb %s directory exists \n Overriding directory" % dbv)
-            pass
-        os.system("mv "+outpath+"RefSeq* ../tmp/RefSeqdb"+dbv)
-        
+        #try:
+            #os.mkdir("../tmp/RefSeqdb"+dbv)
+        #except OSError:
+            #print("RefSeqdb %s directory exists \n Overriding directory" % dbv)
+            #pass
+        #os.system("mv "+outpath+"RefSeq* ../tmp/RefSeqdb"+dbv)
+        os.system("rm -rf "+outpath+"RefSeq*")
         for starting_codon in codons:
             _, proc_list = helper.uPEP_finder(codon=starting_codon, db_version=dbv, outpath=outpath, fn=fn)
             helper.build_blast_db(proc_list)
-        # Here is where we should go into maintainence mode
+        
         helper.finalise_update()
         dbcon = MySQLdb.connect(user=dbuser, passwd=dbpass, host=dbhost, db=daba)
         cursor = dbcon.cursor()
